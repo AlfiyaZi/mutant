@@ -1,0 +1,11 @@
+Album:
+    - artist: {type: Musician, on-delete: CASCADE}
+    - name: String
+    - release_date: Date
+    - num_stars: Integer
+
+Musician:
+    - first_name: String
+    - last_name: String
+    - instrument: String
+

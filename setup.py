@@ -14,12 +14,11 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [
-    # TODO: put package requirements here
-]
+with open('requirements.txt') as requirements_file:
+    requirements = [x.strip() for x in requirements_file]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    'pytest',
 ]
 
 setup(
@@ -33,8 +32,8 @@ setup(
     packages=[
         'mutant',
     ],
-    package_dir={'mutant':
-                 'mutant'},
+    scripts=['scripts/mutate'],
+    package_dir={'': 'src'},
     include_package_data=True,
     install_requires=requirements,
     license="ISCL",
