@@ -59,19 +59,36 @@ def make_custom_field_type(entity):
 
 class BaseField(object):
     DJANGO_ATTRIBUTES = (
-        'primary_key',
-        'on_delete',
+        ('primary_key', False),
+        ('null', False),
+        ('blank', False),
+        ('choices', False),
+        ('db_column', None),
+        ('db_index', None),
+        ('db_tablespace', None),
+        ('default', None),
+        ('editable', True),
+        ('error_messages', None),
+        ('help_text', None),
+        ('unique', False),
+        ('unique_for_date', False),
+        ('unique_for_month', False),
+        ('unique_for_year', False),
+        ('verbose_name', None),
     )
     DJANGO_FIELD = None
 
-    def __init__(self, name, private=False, primary_key=False, on_delete=None):
+    def __init__(self, name, **kwargs):
         super(BaseField, self).__init__()
         self.name = name
-        self.options = {
-            'django_field': self.DJANGO_FIELD,
-            'private': private,
-            'primary_key': primary_key,
-        }
+        self.options = dict(
+            {'django_field': self.DJANGO_FIELD},
+        )
+        self.options.update([
+            (key, kwargs[key])
+            for key, _ in self.DJANGO_ATTRIBUTES
+            if key in kwargs
+        ])
 
     def render(self, template):
         logger.debug(dict(field_name=self.name, field_type=self.options))
@@ -84,8 +101,8 @@ class BaseField(object):
     def django_attributes(self):
         return [
             (key, self.options[key])
-            for key in self.DJANGO_ATTRIBUTES
-            if key in self.options
+            for key, default_value in self.DJANGO_ATTRIBUTES
+            if key in self.options and self.options[key] != default_value
         ]
 
     @staticmethod
@@ -96,19 +113,20 @@ class BaseField(object):
 class ForeignKey(BaseField):
     DJANGO_FIELD = "ForeignKey"
     DJANGO_ATTRIBUTES = BaseField.DJANGO_ATTRIBUTES + (
-        'model',
+        ('on_delete', 'CASCADE'),
+        ('othermodel', None),
     )
 
     def __init__(self, **kwargs):
         super(ForeignKey, self).__init__(**kwargs)
         self.options.update(
-            model=self.foreign_model.name,
+            othermodel="'{0}'".format(self.foreign_model.name),
         )
 
 
 class StringField(BaseField):
     DJANGO_ATTRIBUTES = BaseField.DJANGO_ATTRIBUTES + (
-        'max_length',
+        ('max_length', None),
     )
     DJANGO_FIELD = "CharField"
 
@@ -172,8 +190,7 @@ def define_field(name, field_type):
     }
     typename = n_field_type.pop("type")
     if typename not in mutant_field_types:
-        logger.debug("Field %s definition failed: unknown type %s",
-                     name, typename)
+        logger.debug("Field %s definition failed: unknown type %s", name, typename)
         raise NotReady
     field_obj = mutant_field_types[typename](name=name, **n_field_type)
     return field_obj
