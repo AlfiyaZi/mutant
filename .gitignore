@@ -111,3 +111,4 @@ $RECYCLE.BIN/
 # Vim
 .ropeproject
 *.swp
+src/mutant.egg-info
