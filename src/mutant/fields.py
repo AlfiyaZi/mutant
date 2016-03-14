@@ -25,9 +25,7 @@ class BaseField(object):
 class ForeignKeyBase(BaseField):
     def __init__(self, **kwargs):
         super(ForeignKeyBase, self).__init__(**kwargs)
-        self.options.update(
-            othermodel="'{0}'".format(self.foreign_model.name),
-        )
+        self.options['model'] = self.foreign_model.name
 
 
 class StringField(BaseField):

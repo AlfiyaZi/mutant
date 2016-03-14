@@ -29,7 +29,12 @@ class {{ name }}(models.Model):
 
 DJANGO_FIELD_TEMPLATE = Template("""
     {{ field_name }} = models.{{ field_type.django_field }}(
+      {%- for value in field_type.django_positional -%}
+        {{ value }}
+        {%- if not loop.last %}, {% endif -%}
+      {%- endfor -%}
       {%- for name, value in field_type.django_attributes -%}
+        {%- if loop.first and field_type.django_positional %}, {% endif -%}
         {{ name }}={{ value }}
         {%- if not loop.last %}, {% endif -%}
       {%- endfor -%}
@@ -93,6 +98,7 @@ class DjangoBase(BaseGenerator):
             self.options.setdefault(key, value)
         self.options.update({
             'django_field': self.DJANGO_FIELD,
+            'django_positional': self.django_positional(),
             'django_attributes': self.django_attributes(),
         })
 
@@ -102,6 +108,9 @@ class DjangoBase(BaseGenerator):
 
     def render_django(self):
         return self.render(DJANGO_FIELD_TEMPLATE)
+
+    def django_positional(self):
+        return []
 
     def django_attributes(self):
         return [
@@ -114,9 +123,20 @@ class DjangoBase(BaseGenerator):
 class DjangoForeignKey(DjangoBase):
     DJANGO_FIELD = "ForeignKey"
     DJANGO_ATTRIBUTES = DjangoBase.DJANGO_ATTRIBUTES + (
-        ('on_delete', 'CASCADE'),
-        ('othermodel', None),
+        ('on_delete', None),
     )
+    MUTANT_DEFAULTS = DjangoBase.MUTANT_DEFAULTS + (
+        ('on_delete', 'CASCADE'),
+    )
+
+    def django_attributes(self):
+        self.options['on_delete'] = "models.{0}".format(self.options['on_delete'])
+        return super(DjangoForeignKey, self).django_attributes()
+
+    def django_positional(self):
+        return [
+            "'{0}'".format(self.field.options['model']),
+        ]
 
 
 class DjangoString(DjangoBase):

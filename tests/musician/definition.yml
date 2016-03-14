@@ -7,5 +7,7 @@ Album:
 Musician:
     - first_name: String
     - last_name: String
-    - instrument: String
+    - instrument: Instrument
 
+Instrument:
+    - name: String
