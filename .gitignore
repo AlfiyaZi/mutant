@@ -112,3 +112,4 @@ $RECYCLE.BIN/
 .ropeproject
 *.swp
 src/mutant.egg-info
+.env
