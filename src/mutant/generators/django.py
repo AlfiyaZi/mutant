@@ -166,7 +166,6 @@ class DjangoBase(BaseGenerator):
         return []
 
 
-
 class DjangoForeignKey(DjangoBase):
     DJANGO_FIELD = "ForeignKey"
     DJANGO_ATTRIBUTES = DjangoBase.DJANGO_ATTRIBUTES + (
