@@ -5,12 +5,13 @@ logger = logging.getLogger(__name__)
 
 
 class BaseGenerator(object):
-    def __init__(self, field):
-        self.field = field
-        self.options = {}
+    def __init__(self, name, options=None):
+        self.name = name
+        self.options = options or {}
+
+    @classmethod
+    def for_field(cls, field):
+        return cls(name=field.name, options=field.options)
 
     def render(self, template):
-        logger.debug(dict(field_name=self.name, field_type=self.options))
-        options = self.options.copy()
-        options.update(self.field.options)
-        return template.render(field_name=self.field.name, field_type=options)
+        return template.render(field_name=self.name, field_type=self.options)

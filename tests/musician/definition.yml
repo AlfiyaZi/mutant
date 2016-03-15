@@ -7,7 +7,7 @@ Album:
 Musician:
     - first_name: String
     - last_name: String
-    - instrument: Instrument
+    - instruments: {list-of: Instrument}
 
 Instrument:
     - name: String

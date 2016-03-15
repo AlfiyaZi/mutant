@@ -56,9 +56,15 @@ class YamlParser(object):
             normalize_option_name(name): value
             for name, value in field_type.items()
         }
+        requisites = []
+        if 'list_of' in n_field_type:
+            n_field_type['type'] = 'List'
+            requisites.append(n_field_type['list_of'])
         typename = n_field_type.pop("type")
-        if typename not in self.field_types:
-            logger.debug("Field %s definition failed: unknown type %s", name, typename)
-            raise NotReady
+        requisites.append(typename)
+        for requisite in requisites:
+            if requisite not in self.field_types:
+                logger.debug("Field %s definition failed: unknown type %s", name, requisite)
+                raise NotReady
         field_obj = self.field_types[typename](name=name, **n_field_type)
         return field_obj

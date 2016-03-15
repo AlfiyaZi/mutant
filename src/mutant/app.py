@@ -7,6 +7,10 @@ from mutant.parsers.yaml_parser import YamlParser
 logger = logging.getLogger(__name__)
 
 
+class UnknownGenerator(KeyError):
+    pass
+
+
 def load_parsers():
     return {
         'yaml': YamlParser,
@@ -31,12 +35,13 @@ def generators_for_field(fields, generators):
 
     def generator_factory(field):
         if field.__class__ in mapping:
-            return mapping[field.__class__](field)
+            return mapping[field.__class__].for_field(field)
         else:
             # Hack for dynamically created ForeignKey class
             for superclass in mapping.keys():
                 if isinstance(field, superclass):
-                    return mapping[superclass](field)
+                    return mapping[superclass].for_field(field)
+        raise UnknownGenerator(field)
 
     return generator_factory
 
@@ -47,7 +52,7 @@ def yaml_to_django(definition='definition.yml'):
     parsers = load_parsers()
     with open(definition) as fp:
         schema = parsers['yaml'](fields).parse(fp)
-    models = django.render_schema(entities=schema, maker=generator_factory)
+    models = django.DjangoSchema(schema, generator_factory).render()
     return models
 
 
