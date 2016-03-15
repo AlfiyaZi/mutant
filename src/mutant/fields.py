@@ -36,6 +36,10 @@ class EmailField(StringField):
     pass
 
 
+class TextField(BaseField):
+    pass
+
+
 class IntegerField(BaseField):
     pass
 
@@ -50,6 +54,7 @@ class ListField(BaseField):
 
 MUTANT_FIELDS = {
     'String': StringField,
+    'Text': TextField,
     'Email': EmailField,
     'Integer': IntegerField,
     'Date': DateField,

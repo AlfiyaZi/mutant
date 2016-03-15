@@ -65,6 +65,6 @@ class YamlParser(object):
         for requisite in requisites:
             if requisite not in self.field_types:
                 logger.debug("Field %s definition failed: unknown type %s", name, requisite)
-                raise NotReady
+                raise NotReady(requisite)
         field_obj = self.field_types[typename](name=name, **n_field_type)
         return field_obj

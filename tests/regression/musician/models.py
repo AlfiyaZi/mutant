@@ -18,5 +18,5 @@ class Album(models.Model):
 
 
 class MusicianInstrument(models.Model):
-    musician = models.ForeignKey('Musician', on_delete=models.CASCADE)
-    instrument = models.ForeignKey('Instrument', on_delete=models.CASCADE)
+    musician = models.ForeignKey('Musician', primary_key=True, on_delete=models.CASCADE)
+    instrument = models.ForeignKey('Instrument', primary_key=True, on_delete=models.CASCADE)

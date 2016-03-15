@@ -57,4 +57,5 @@ def yaml_to_django(definition='definition.yml'):
 
 
 def main(*args, **kwargs):
+    logging.basicConfig(level=logging.DEBUG)
     print(yaml_to_django(*args, **kwargs))

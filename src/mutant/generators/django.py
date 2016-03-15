@@ -56,6 +56,14 @@ class DjangoSchema(object):
         ]
         for renderer in list(renderers):
             renderers.extend(renderer.additional_renderers())
+        transfers = []
+        for renderer in renderers:
+            transfers.extend(renderer.transfer_foreign_keys())
+        for entity_name, new_field in transfers:
+            for renderer in renderers:
+                if renderer.entity_name == entity_name:
+                    renderer.fields.append(new_field)
+                    break
         return DJANGO_FILE_TEMPLATE.render(entities=renderers)
 
 
@@ -84,11 +92,16 @@ class DjangoEntity(object):
         )
 
     def additional_renderers(self):
-        new_entities = itertools.chain.from_iterable(
+        return itertools.chain.from_iterable(
             field.additional_renderers(self.entity_name)
             for field in self.fields
         )
-        return new_entities
+
+    def transfer_foreign_keys(self):
+        return itertools.chain.from_iterable(
+            field.transfer_foreign_keys(self.entity_name)
+            for field in self.fields
+        )
 
 
 class DjangoBase(BaseGenerator):
@@ -149,6 +162,10 @@ class DjangoBase(BaseGenerator):
     def additional_renderers(self, *args, **kwargs):
         return []
 
+    def transfer_foreign_keys(self, *args, **kwargs):
+        return []
+
+
 
 class DjangoForeignKey(DjangoBase):
     DJANGO_FIELD = "ForeignKey"
@@ -180,6 +197,7 @@ class DjangoList(DjangoBase):
     )
     PROXY_ATTRIBUTES = (
         ('list_of', None),
+        ('own', False),
     )
     MUTANT_DEFAULTS = DjangoBase.MUTANT_DEFAULTS + (
         ('on_delete', 'CASCADE'),
@@ -189,18 +207,32 @@ class DjangoList(DjangoBase):
         return ''
 
     def additional_renderers(self, entity):
-        return [self.many_to_many(entity)]
+        if self.options.get('own'):
+            return []
+        else:
+            return [self.many_to_many(entity)]
 
     def many_to_many(self, entity_name):
         inflector = inflect.engine()
         from_name = entity_name.lower()
         to_name = inflector.singular_noun(self.name)
-        m2m_from = DjangoForeignKey(from_name, {'entity': entity_name})
-        m2m_to = DjangoForeignKey(to_name, {'entity': self.options['list_of']})
+        m2m_from = DjangoForeignKey(from_name, {'entity': entity_name, 'primary_key': True})
+        m2m_to = DjangoForeignKey(to_name, {'entity': self.options['list_of'], 'primary_key': True})
         return DjangoEntity(
             entity_name=entity_name + self.options['list_of'],
             fields=[m2m_from, m2m_to],
         )
+
+    def transfer_foreign_keys(self, entity_name):
+        if self.options.get('own'):
+            return [self.one_to_many(entity_name)]
+        else:
+            return []
+
+    def one_to_many(self, entity_name):
+        to_name = entity_name.lower()
+        new_field = DjangoForeignKey(to_name, {'entity': entity_name})
+        return self.options['list_of'], new_field
 
 
 class DjangoString(DjangoBase):
@@ -218,6 +250,10 @@ class DjangoEmail(DjangoString):
     MUTANT_DEFAULTS = DjangoString.MUTANT_DEFAULTS + (
         ('max_length', None),
     )
+
+
+class DjangoText(DjangoBase):
+    DJANGO_FIELD = "TextField"
 
 
 class DjangoInteger(DjangoBase):
@@ -244,6 +280,7 @@ class DerivedField(object):
 def register():
     return {
         'String': DjangoString,
+        'Text': DjangoText,
         'Email': DjangoEmail,
         'Integer': DjangoInteger,
         'Date': DjangoDate,
