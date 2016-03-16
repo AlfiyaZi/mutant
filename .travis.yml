@@ -6,7 +6,7 @@ python:
   - "3.5"
   - "3.5-dev" # 3.5 development branch
 # command to install dependencies
-install: "pip install -r requirements_dev.txt -e ."
+install: "pip install -r requirements_dev.txt && python setup.py install"
 # command to run tests
 script:
   - py.test --pep8 -vv --cov mutant --cov-report term-missing
