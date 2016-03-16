@@ -1,27 +1,25 @@
-===============================
-Python Schema Generator
-===============================
-
-.. image:: https://img.shields.io/pypi/v/mutant.svg
-        :target: https://pypi.python.org/pypi/mutant
+================================
+Mutant - Python Schema Generator
+================================
 
 .. image:: https://img.shields.io/travis/peterdemin/mutant.svg
         :target: https://travis-ci.org/peterdemin/mutant
 
-.. image:: https://readthedocs.org/projects/mutant/badge/?version=latest
-        :target: https://readthedocs.org/projects/mutant/?badge=latest
-        :alt: Documentation Status
+.. image:: https://coveralls.io/repos/github/peterdemin/mutant/badge.svg?branch=master
+        :target: https://coveralls.io/github/peterdemin/mutant?branch=master
+        :alt: Test Coverage
 
+..
+    .. image:: https://img.shields.io/pypi/v/mutant.svg
+           :target: https://pypi.python.org/pypi/mutant
+    .. image:: https://readthedocs.org/projects/mutant/badge/?version=latest
+            :target: https://readthedocs.org/projects/mutant/?badge=latest
+            :alt: Documentation Status
 
 Python Schema Generator generates all schemas using one source definition
 
 * Free software: ISC license
-* Documentation: https://mutant.readthedocs.org.
-
-Features
---------
-
-* TODO
+.. * Documentation: https://mutant.readthedocs.org.
 
 Credits
 ---------
