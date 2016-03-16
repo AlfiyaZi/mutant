@@ -18,7 +18,7 @@ class YamlParser(object):
     @classmethod
     def normalize_schema(cls, entities):
         return {
-            entity: map(cls.normalize_field, fields)
+            entity: list(map(cls.normalize_field, fields))
             for entity, fields in entities.items()
         }
 

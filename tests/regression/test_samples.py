@@ -1,4 +1,5 @@
 import os
+import logging
 import unittest
 
 from mutant.main import yaml_to_django
@@ -9,6 +10,9 @@ def here(*parts):
 
 
 class YamlToDjangoRegressionTestCase(unittest.TestCase):
+    def setUp(self):
+        logging.basicConfig(level=logging.DEBUG)
+
     def test_author(self):
         self.yaml_to_model("author")
 
