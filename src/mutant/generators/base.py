@@ -4,14 +4,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+class UnknownGenerator(KeyError):
+    pass
+
+
 class BaseGenerator(object):
-    def __init__(self, name, options=None):
-        self.name = name
-        self.options = options or {}
+    field_generators = {}
 
-    @classmethod
-    def for_field(cls, field):
-        return cls(name=field.name, options=field.options)
+    def __init__(self, entities, fields):
+        self.entities = entities
+        self.fields = fields
 
-    def render(self, template):
-        return template.render(field_name=self.name, field_type=self.options)
+    def render(self):
+        raise NotImplemented()

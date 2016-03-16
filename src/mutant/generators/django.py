@@ -3,6 +3,7 @@ import logging
 
 from jinja2 import Template
 from mutant.generators.base import BaseGenerator
+from mutant.generators.utils import JinjaFieldGenerator
 import inflect
 
 
@@ -24,7 +25,7 @@ from django.db import models
 DJANGO_MODEL_TEMPLATE = Template("""
 class {{ name }}(models.Model):
   {%- for field in fields -%}
-    {{ field.render_django() }}
+    {{ field.render() }}
   {%- endfor -%}
 """.lstrip())
 
@@ -44,44 +45,47 @@ DJANGO_FIELD_TEMPLATE = Template("""
 """)
 
 
-class DjangoSchema(object):
-    def __init__(self, entities, field_factory):
-        self.entities = entities
-        self.field_factory = field_factory
+class DjangoSchemaGenerator(BaseGenerator):
+    def __init__(self, *args, **kwargs):
+        super(DjangoSchemaGenerator, self).__init__(*args, **kwargs)
+        self.field_generators = {
+            'String': DjangoString,
+            'Text': DjangoText,
+            'Email': DjangoEmail,
+            'Integer': DjangoInteger,
+            'Date': DjangoDate,
+            'ForeignKey': DjangoForeignKey,
+            'List': DjangoList,
+        }
 
     def render(self):
-        renderers = [
-            DjangoEntity.for_entity(entity, self.field_factory)
-            for entity in self.entities
-        ]
-        for renderer in list(renderers):
-            renderers.extend(renderer.additional_renderers())
+        return DJANGO_FILE_TEMPLATE.render(entities=self._renderers())
+
+    def _renderers(self):
+        entity_renderers = []
+        for entity in self.entities:
+            fgs = [
+                self.field_generators[field.typename].for_field(field)
+                for field in entity.fields
+            ]
+            entity_renderers.append(DjangoEntity(entity.name, fgs))
+        for renderer in list(entity_renderers):
+            entity_renderers.extend(renderer.additional_renderers())
         transfers = []
-        for renderer in renderers:
+        for renderer in entity_renderers:
             transfers.extend(renderer.transfer_foreign_keys())
         for entity_name, new_field in transfers:
-            for renderer in renderers:
+            for renderer in entity_renderers:
                 if renderer.entity_name == entity_name:
                     renderer.fields.append(new_field)
                     break
-        return DJANGO_FILE_TEMPLATE.render(entities=renderers)
+        return entity_renderers
 
 
 class DjangoEntity(object):
-    def __init__(self, entity_name, fields, factory=None):
+    def __init__(self, entity_name, fields):
         self.entity_name = entity_name
         self.fields = fields
-        self.factory = factory
-
-    @classmethod
-    def for_entity(cls, entity, factory):
-        fields = [factory(field)
-                  for field in entity.fields]
-        return DjangoEntity(
-            entity_name=entity.name,
-            fields=fields,
-            factory=factory,
-        )
 
     def render(self):
         logger.debug(self.__dict__)
@@ -104,7 +108,8 @@ class DjangoEntity(object):
         )
 
 
-class DjangoBase(BaseGenerator):
+class DjangoBase(JinjaFieldGenerator):
+    template = DJANGO_FIELD_TEMPLATE
     DJANGO_ATTRIBUTES = (
         ('primary_key', False),
         ('null', False),
@@ -145,9 +150,6 @@ class DjangoBase(BaseGenerator):
             if key in field.options
         }
         return cls(name=field.name, options=options)
-
-    def render_django(self):
-        return self.render(DJANGO_FIELD_TEMPLATE)
 
     def django_positional(self):
         return []
@@ -202,7 +204,7 @@ class DjangoList(DjangoBase):
         ('on_delete', 'CASCADE'),
     )
 
-    def render_django(self):
+    def render(self):
         return ''
 
     def additional_renderers(self, entity):
@@ -277,14 +279,4 @@ class DerivedField(object):
 
 
 def register(app):
-    renderers = {
-        'String': DjangoString,
-        'Text': DjangoText,
-        'Email': DjangoEmail,
-        'Integer': DjangoInteger,
-        'Date': DjangoDate,
-        'ForeignKey': DjangoForeignKey,
-        'List': DjangoList,
-    }
-    for name, renderer in renderers.items():
-        app.register_generator('django', name, renderer)
+    app.register_generator('django', DjangoSchemaGenerator)

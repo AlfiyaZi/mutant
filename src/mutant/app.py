@@ -1,5 +1,4 @@
 import logging
-from mutant.generators import django
 
 
 logger = logging.getLogger(__name__)
@@ -23,28 +22,8 @@ class MutantApp(object):
     def register_parser(self, name, parser_class):
         self.parsers[name] = parser_class
 
-    def register_generator(self, generator_name, field_name, generator_class):
-        self.generators.setdefault(generator_name, {})[field_name] = generator_class
-
-    def generator_factory(self, generator_name):
-        generator = self.generators[generator_name]
-        keys = set(self.fields.keys()).intersection(generator.keys())
-        mapping = {
-            self.fields[key]: generator[key]
-            for key in keys
-        }
-
-        def generator_factory(field):
-            if field.__class__ in mapping:
-                return mapping[field.__class__].for_field(field)
-            else:
-                # Hack for dynamically created ForeignKey class
-                for superclass in mapping.keys():
-                    if isinstance(field, superclass):
-                        return mapping[superclass].for_field(field)
-            raise UnknownGenerator(field)
-
-        return generator_factory
+    def register_generator(self, generator_name, generator_class):
+        self.generators[generator_name] = generator_class
 
     def parse(self, parser_name, file_of_name):
         parser = self.parsers[parser_name](self.fields)
@@ -56,9 +35,4 @@ class MutantApp(object):
         return self.schema
 
     def mutate(self, generator_name):
-        factory = self.generator_factory(generator_name)
-        return django.DjangoSchema(self.schema, factory).render()
-
-
-class UnknownGenerator(KeyError):
-    pass
+        return self.generators[generator_name](self.schema, self.fields).render()

@@ -9,6 +9,8 @@ def make_custom_field_type(entity):
 
 
 class BaseField(object):
+    typename = None
+
     def __init__(self, name, **kwargs):
         super(BaseField, self).__init__()
         self.name = name
@@ -19,44 +21,38 @@ class BaseField(object):
 
 
 class ForeignKeyBase(BaseField):
+    typename = "ForeignKey"
+
     def __init__(self, **kwargs):
+        kwargs.setdefault('entity', self.entity.name)
         super(ForeignKeyBase, self).__init__(**kwargs)
-        self.options['entity'] = self.entity.name
 
 
 class StringField(BaseField):
-    pass
+    typename = "String"
 
 
 class EmailField(StringField):
-    pass
+    typename = "Email"
 
 
 class TextField(BaseField):
-    pass
+    typename = "Text"
 
 
 class IntegerField(BaseField):
-    pass
+    typename = "Integer"
 
 
 class DateField(BaseField):
-    pass
+    typename = "Date"
 
 
 class ListField(BaseField):
-    pass
+    typename = "List"
 
 
 def register(app):
-    fields = {
-        'String': StringField,
-        'Text': TextField,
-        'Email': EmailField,
-        'Integer': IntegerField,
-        'Date': DateField,
-        'ForeignKey': ForeignKeyBase,
-        'List': ListField,
-    }
-    for name, field in fields.items():
-        app.register_field(name, field)
+    for cls in (StringField, EmailField, TextField, IntegerField, DateField, ListField):
+        app.register_field(cls.typename, cls)
+    app.register_field('ForeignKey', ForeignKeyBase)
