@@ -107,6 +107,9 @@ class DjangoEntity(object):
             for field in self.fields
         )
 
+    def __repr__(self):
+        return u'<{0} {1}>'.format(self.__class__.__name__, self.entity_name)
+
 
 class DjangoBase(JinjaFieldGenerator):
     template = DJANGO_FIELD_TEMPLATE

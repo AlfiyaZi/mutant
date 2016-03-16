@@ -17,3 +17,6 @@ class JinjaFieldGenerator(object):
 
     def render(self):
         return self.template.render(field_name=self.name, field_type=self.options)
+
+    def __repr__(self):
+        return u'<{0} {1}>'.format(self.__class__.__name__, self.name)
