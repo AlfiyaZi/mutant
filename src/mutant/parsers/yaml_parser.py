@@ -1,73 +1,45 @@
 import yaml
 import logging
-from collections import deque
 from six import string_types
-from mutant.fields import make_custom_field_type
-from mutant.entity import Entity
+from mutant.parsers.python_parser import PythonParser
 
 
 logger = logging.getLogger(__name__)
 
 
-def normalize_option_name(name):
-    return name.replace("-", "_").lower()
-
-
-class NotReady(Exception):
-    pass
-
-
 class YamlParser(object):
     def __init__(self, field_types):
-        self.field_types = field_types
+        self.real_parser = PythonParser(field_types)
 
     def parse(self, stream):
-        definition = yaml.load(stream)
-        logger.debug(definition)
+        definition = self.normalize_schema(yaml.load(stream))
+        return self.real_parser.parse(definition)
 
-        schema = []
-        entities = deque(definition.items())
-        fails_count = 0
-        while entities:
-            entity, field_defs = entities.popleft()
-            fields = []
-            for data in field_defs:
-                assert len(data) == 1
-                name, field_type = next(iter(data.items()))
-                try:
-                    fields.append(self.define_field(name, field_type))
-                except NotReady:
-                    entities.append((entity, field_defs))
-                    fails_count += 1
-                    if fails_count > 10:
-                        raise
-                    else:
-                        break
-            else:
-                entity_obj = Entity(name=entity, fields=fields)
-                schema.append(entity_obj)
-                self.field_types[entity] = make_custom_field_type(entity_obj)
-        return schema
-
-    def define_field(self, name, field_type):
-        if isinstance(field_type, string_types):
-            field_type = {"type": field_type}
-        n_field_type = {
-            normalize_option_name(name): value
-            for name, value in field_type.items()
+    @classmethod
+    def normalize_schema(cls, entities):
+        return {
+            entity: map(cls.normalize_field, fields)
+            for entity, fields in entities.items()
         }
-        requisites = []
-        if 'list_of' in n_field_type:
-            n_field_type['type'] = 'List'
-            requisites.append(n_field_type['list_of'])
-        typename = n_field_type.pop("type")
-        requisites.append(typename)
-        for requisite in requisites:
-            if requisite not in self.field_types:
-                logger.debug("Field %s definition failed: unknown type %s", name, requisite)
-                raise NotReady(requisite)
-        field_obj = self.field_types[typename](name=name, **n_field_type)
-        return field_obj
+
+    @classmethod
+    def normalize_field(cls, field_def):
+        field_name, field = next(iter(field_def.items()))
+        if isinstance(field, string_types):
+            field = {'type': field}
+        n_field = {
+            cls.normalize_option_name(name): value
+            for name, value in field.items()
+        }
+        if 'list_of' in n_field:
+            assert 'type' not in n_field, 'Keys `list-of` and `type` can not be used simultaneosly in field definition'
+            n_field['type'] = 'List'
+        assert 'type' in n_field, 'Key `type` must be defined for field %s' % (field_name)
+        return {field_name: n_field}
+
+    @staticmethod
+    def normalize_option_name(name):
+        return name.replace("-", "_").lower()
 
 
 def register(app):
