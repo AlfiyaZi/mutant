@@ -5,7 +5,7 @@ logger = logging.getLogger(__name__)
 
 
 def make_custom_field_type(entity):
-    return type('ForeignKey', (MUTANT_FIELDS['ForeignKey'],), dict(entity=entity))
+    return type('ForeignKey', (ForeignKeyBase,), dict(entity=entity))
 
 
 class BaseField(object):
@@ -13,10 +13,6 @@ class BaseField(object):
         super(BaseField, self).__init__()
         self.name = name
         self.options = kwargs
-
-    # def render(self, template):
-    #     logger.debug(dict(field_name=self.name, field_type=self.options))
-    #     return template.render(field_name=self.name, field_type=self.options)
 
     def __repr__(self):
         return u'<{0} {1}>'.format(self.__class__.__name__, self.name)
@@ -52,12 +48,15 @@ class ListField(BaseField):
     pass
 
 
-MUTANT_FIELDS = {
-    'String': StringField,
-    'Text': TextField,
-    'Email': EmailField,
-    'Integer': IntegerField,
-    'Date': DateField,
-    'ForeignKey': ForeignKeyBase,
-    'List': ListField,
-}
+def register(app):
+    fields = {
+        'String': StringField,
+        'Text': TextField,
+        'Email': EmailField,
+        'Integer': IntegerField,
+        'Date': DateField,
+        'ForeignKey': ForeignKeyBase,
+        'List': ListField,
+    }
+    for name, field in fields.items():
+        app.register_field(name, field)

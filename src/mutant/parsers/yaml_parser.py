@@ -68,3 +68,7 @@ class YamlParser(object):
                 raise NotReady(requisite)
         field_obj = self.field_types[typename](name=name, **n_field_type)
         return field_obj
+
+
+def register(app):
+    app.register_parser('yaml', YamlParser)

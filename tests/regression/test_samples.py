@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from mutant.app import yaml_to_django
+from mutant.main import yaml_to_django
 
 
 def here(*parts):
