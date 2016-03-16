@@ -20,7 +20,7 @@ class MutantApp(object):
         self.generators = {}
 
     def register_field(self, name, field_class):
-        self.field[name] = field_class
+        self.fields[name] = field_class
 
     def register_parser(self, name, parser_class):
         self.parsers[name] = parser_class
@@ -29,9 +29,10 @@ class MutantApp(object):
         self.generators.setdefault(generator_name, {})[field_name] = generator_class
 
     def generator_factory(self, generator_name):
-        keys = set(self.fields.keys()).intersection(self.generators[generator_name].keys())
+        generator = self.generators[generator_name]
+        keys = set(self.fields.keys()).intersection(generator.keys())
         mapping = {
-            self.fields[key]: self.generators[key]
+            self.fields[key]: generator[key]
             for key in keys
         }
 
@@ -47,13 +48,18 @@ class MutantApp(object):
 
         return generator_factory
 
-    def parse(self, parser_name, *args, **kwargs):
+    def parse(self, parser_name, file_of_name):
         parser = self.parsers[parser_name](self.fields)
-        self.schema = parser.parse(*args, **kwargs)
+        if hasattr(file_of_name, 'read'):
+            self.schema = parser.parse(file_of_name)
+        else:
+            with open(file_of_name) as fp:
+                self.schema = parser.parse(fp)
         return self.schema
 
     def mutate(self, generator_name):
-        return self.generators
+        factory = self.generator_factory(generator_name)
+        return django.DjangoSchema(self.schema, factory).render()
 
 
 class UnknownGenerator(KeyError):
@@ -96,13 +102,13 @@ def generators_for_field(fields, generators):
 
 
 def yaml_to_django(definition='definition.yml'):
-    fields = load_fields()
-    generator_factory = generators_for_field(fields, load_generators())
-    parsers = load_parsers()
-    with open(definition) as fp:
-        schema = parsers['yaml'](fields).parse(fp)
-    models = django.DjangoSchema(schema, generator_factory).render()
-    return models
+    app = MutantApp()
+    for name, field in MUTANT_FIELDS.items():
+        app.register_field(name, field)
+    app.register_parser('yaml', YamlParser)
+    django.register(app)
+    app.parse('yaml', definition)
+    return app.mutate('django')
 
 
 def main(*args, **kwargs):

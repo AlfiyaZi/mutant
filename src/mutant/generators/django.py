@@ -276,8 +276,8 @@ class DerivedField(object):
         self.options = options or {}
 
 
-def register():
-    return {
+def register(app):
+    renderers = {
         'String': DjangoString,
         'Text': DjangoText,
         'Email': DjangoEmail,
@@ -286,3 +286,5 @@ def register():
         'ForeignKey': DjangoForeignKey,
         'List': DjangoList,
     }
+    for name, renderer in renderers.items():
+        app.register_generator('django', name, renderer)
