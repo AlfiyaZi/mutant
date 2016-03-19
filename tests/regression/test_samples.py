@@ -2,7 +2,7 @@ import os
 import logging
 import unittest
 
-from mutant.main import yaml_to_django
+from mutant.main import yaml_to_django, yaml_to_cerberus
 
 
 def here(*parts):
@@ -14,16 +14,24 @@ class YamlToDjangoRegressionTestCase(unittest.TestCase):
         logging.basicConfig(level=logging.DEBUG)
 
     def test_author(self):
-        self.yaml_to_model("author")
+        self.yaml_to_django("author")
+        self.yaml_to_cerberus("author")
 
     def test_musician(self):
-        self.yaml_to_model("musician")
+        self.yaml_to_django("musician")
 
     def test_blog(self):
-        self.yaml_to_model("blog")
+        self.yaml_to_django("blog")
+        self.yaml_to_cerberus("blog")
 
-    def yaml_to_model(self, dirname):
+    def yaml_to_django(self, dirname):
         models = yaml_to_django(here(dirname, "definition.yml"))
         with open(here(dirname, "models.py")) as fp:
             expect = fp.read()
         assert models == expect
+
+    def yaml_to_cerberus(self, dirname):
+        schema = yaml_to_cerberus(here(dirname, "definition.yml"))
+        with open(here(dirname, "cerberus.py")) as fp:
+            expect = fp.read().rstrip()
+        assert schema == expect

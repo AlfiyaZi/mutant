@@ -33,6 +33,7 @@ setup(
         'mutant',
         'mutant_django',
         'mutant_yaml',
+        'mutant_cerberus',
     ],
     scripts=['scripts/mutate'],
     package_dir={'': 'src'},
