@@ -13,7 +13,7 @@ class JinjaFieldGenerator(object):
 
     @classmethod
     def for_field(cls, field):
-        return cls(name=field.name, options=field.options)
+        return cls(name=field['name'], options=field['options'])
 
     def render(self):
         return self.template.render(field_name=self.name, field_type=self.options)

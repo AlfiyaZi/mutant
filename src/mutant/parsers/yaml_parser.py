@@ -8,11 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 class YamlParser(object):
-    def __init__(self, maker):
-        self.real_parser = PythonParser(maker)
-
-    def set_field_types(self, field_types):
-        self.real_parser.set_field_types(field_types)
+    def __init__(self, *args, **kwargs):
+        self.real_parser = PythonParser(*args, **kwargs)
 
     def parse(self, stream):
         definition = self.normalize_schema(yaml.load(stream))
@@ -20,13 +17,14 @@ class YamlParser(object):
 
     @classmethod
     def normalize_schema(cls, entities):
+        custom_types = entities.keys()
         return {
-            entity: list(map(cls.normalize_field, fields))
+            entity: [cls.normalize_field(field, custom_types) for field in fields]
             for entity, fields in entities.items()
         }
 
     @classmethod
-    def normalize_field(cls, field_def):
+    def normalize_field(cls, field_def, custom_types):
         field_name, field = next(iter(field_def.items()))
         if isinstance(field, string_types):
             field = {'type': field}
@@ -37,7 +35,16 @@ class YamlParser(object):
         if 'list_of' in n_field:
             assert 'type' not in n_field, 'Keys `list-of` and `type` can not be used simultaneosly in field definition'
             n_field['type'] = 'List'
+            n_field.update({
+                'type': 'List',
+                'entity': n_field.pop('list_of'),
+            })
         assert 'type' in n_field, 'Key `type` must be defined for field %s' % (field_name)
+        if n_field['type'] in custom_types:
+            n_field.update({
+                'type': 'Link',
+                'entity': n_field['type'],
+            })
         return {field_name: n_field}
 
     @staticmethod
@@ -46,5 +53,5 @@ class YamlParser(object):
 
 
 def register(app):
-    parser = YamlParser(app.field_maker)
+    parser = YamlParser()
     app.register_parser('yaml', parser)

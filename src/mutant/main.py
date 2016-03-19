@@ -1,5 +1,5 @@
 import logging
-from mutant.fields import classy as builtin_fields
+from mutant.fields import dicty as builtin_fields
 from mutant.generators import django
 from mutant.parsers import yaml_parser
 from mutant.parsers import python_parser
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 def attach_builtins(app):
-    builtin_fields.register(app)
+    # builtin_fields.register(app)
     python_parser.register(app)
     yaml_parser.register(app)
     django.register(app)

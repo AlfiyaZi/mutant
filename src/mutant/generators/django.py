@@ -46,7 +46,8 @@ DJANGO_FIELD_TEMPLATE = Template("""
 
 
 class DjangoSchemaGenerator(BaseGenerator):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, schema, *args, **kwargs):
+        self.entities = schema
         super(DjangoSchemaGenerator, self).__init__(*args, **kwargs)
         self.field_generators = {
             'String': DjangoString,
@@ -54,7 +55,7 @@ class DjangoSchemaGenerator(BaseGenerator):
             'Email': DjangoEmail,
             'Integer': DjangoInteger,
             'Date': DjangoDate,
-            'ForeignKey': DjangoForeignKey,
+            'Link': DjangoForeignKey,
             'List': DjangoList,
         }
 
@@ -65,10 +66,10 @@ class DjangoSchemaGenerator(BaseGenerator):
         entity_renderers = []
         for entity in self.entities:
             fgs = [
-                self.field_generators[field.typename].for_field(field)
-                for field in entity.fields
+                self.field_generators[field['type']].for_field(field)
+                for field in entity['fields']
             ]
-            entity_renderers.append(DjangoEntity(entity.name, fgs))
+            entity_renderers.append(DjangoEntity(entity['name'], fgs))
         for renderer in list(entity_renderers):
             entity_renderers.extend(renderer.additional_renderers())
         transfers = []
@@ -148,11 +149,11 @@ class DjangoBase(JinjaFieldGenerator):
     @classmethod
     def for_field(cls, field):
         options = {
-            key: field.options[key]
+            key: field['options'][key]
             for key, default_value in (cls.DJANGO_ATTRIBUTES + cls.PROXY_ATTRIBUTES)
-            if key in field.options
+            if key in field['options']
         }
-        return cls(name=field.name, options=options)
+        return cls(name=field['name'], options=options)
 
     def django_positional(self):
         return []
@@ -200,7 +201,7 @@ class DjangoList(DjangoBase):
         ('on_delete', None),
     )
     PROXY_ATTRIBUTES = (
-        ('list_of', None),
+        ('entity', None),
         ('own', False),
     )
     MUTANT_DEFAULTS = DjangoBase.MUTANT_DEFAULTS + (
@@ -221,9 +222,9 @@ class DjangoList(DjangoBase):
         from_name = entity_name.lower()
         to_name = inflector.singular_noun(self.name)
         m2m_from = DjangoForeignKey(from_name, {'entity': entity_name, 'primary_key': True})
-        m2m_to = DjangoForeignKey(to_name, {'entity': self.options['list_of'], 'primary_key': True})
+        m2m_to = DjangoForeignKey(to_name, {'entity': self.options['entity'], 'primary_key': True})
         return DjangoEntity(
-            entity_name=entity_name + self.options['list_of'],
+            entity_name=entity_name + self.options['entity'],
             fields=[m2m_from, m2m_to],
         )
 
@@ -236,7 +237,7 @@ class DjangoList(DjangoBase):
     def one_to_many(self, entity_name):
         to_name = entity_name.lower()
         new_field = DjangoForeignKey(to_name, {'entity': entity_name})
-        return self.options['list_of'], new_field
+        return self.options['entity'], new_field
 
 
 class DjangoString(DjangoBase):
