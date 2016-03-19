@@ -1,6 +1,5 @@
 import logging
-from mutant.generators import django
-from mutant.parsers import yaml_parser
+import importlib
 from mutant.parsers import python_parser
 from mutant.app import MutantApp
 
@@ -10,15 +9,21 @@ logger = logging.getLogger(__name__)
 
 def attach_builtins(app):
     python_parser.register(app)
-    yaml_parser.register(app)
-    django.register(app)
 
 
 def yaml_to_django(definition='definition.yml'):
     app = MutantApp()
     attach_builtins(app)
+    load_extension(app, 'django')
+    load_extension(app, 'yaml')
     app.parse('yaml', definition)
     return app.mutate('django')
+
+
+def load_extension(app, name):
+    package_name = 'mutant_' + name
+    package = importlib.import_module(package_name)
+    package.register(app)
 
 
 def main(*args, **kwargs):

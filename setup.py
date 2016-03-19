@@ -31,6 +31,8 @@ setup(
     url='https://github.com/peterdemin/mutant',
     packages=[
         'mutant',
+        'mutant_django',
+        'mutant_yaml',
     ],
     scripts=['scripts/mutate'],
     package_dir={'': 'src'},
