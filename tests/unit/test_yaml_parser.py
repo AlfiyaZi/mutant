@@ -1,4 +1,4 @@
-from mutant.parsers.yaml_parser import YamlParser
+from mutant_yaml.parser import YamlParser
 
 
 def test_yaml_normalization():
