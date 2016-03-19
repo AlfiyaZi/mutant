@@ -1,5 +1,5 @@
 import logging
-from mutant import fields as builtin_fields
+from mutant.fields import classy as builtin_fields
 from mutant.generators import django
 from mutant.parsers import yaml_parser
 from mutant.parsers import python_parser

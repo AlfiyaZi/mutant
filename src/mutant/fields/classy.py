@@ -56,3 +56,4 @@ def register(app):
     for cls in (StringField, EmailField, TextField, IntegerField, DateField, ListField):
         app.register_field(cls.typename, cls)
     app.register_field('ForeignKey', ForeignKeyBase)
+    app.register_field_maker(make_custom_field_type)

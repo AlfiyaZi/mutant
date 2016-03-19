@@ -1,6 +1,5 @@
 import logging
 from collections import deque
-from mutant.fields import make_custom_field_type
 from mutant.entity import Entity
 
 
@@ -12,7 +11,10 @@ class NotReady(Exception):
 
 
 class PythonParser(object):
-    def __init__(self, field_types):
+    def __init__(self, maker):
+        self.maker = maker
+
+    def set_field_types(self, field_types):
         self.field_types = field_types
 
     def parse(self, definition):
@@ -39,7 +41,7 @@ class PythonParser(object):
             else:
                 entity_obj = Entity(name=entity, fields=fields)
                 schema.append(entity_obj)
-                self.field_types[entity] = make_custom_field_type(entity_obj)
+                self.field_types[entity] = self.maker(entity_obj)
         return schema
 
     def define_field(self, name, field_type):
@@ -58,4 +60,5 @@ class PythonParser(object):
 
 
 def register(app):
-    app.register_parser('python', PythonParser)
+    parser = PythonParser(app.field_maker)
+    app.register_parser('python', parser)

@@ -8,8 +8,11 @@ logger = logging.getLogger(__name__)
 
 
 class YamlParser(object):
-    def __init__(self, field_types):
-        self.real_parser = PythonParser(field_types)
+    def __init__(self, maker):
+        self.real_parser = PythonParser(maker)
+
+    def set_field_types(self, field_types):
+        self.real_parser.set_field_types(field_types)
 
     def parse(self, stream):
         definition = self.normalize_schema(yaml.load(stream))
@@ -43,4 +46,5 @@ class YamlParser(object):
 
 
 def register(app):
-    app.register_parser('yaml', YamlParser)
+    parser = YamlParser(app.field_maker)
+    app.register_parser('yaml', parser)
