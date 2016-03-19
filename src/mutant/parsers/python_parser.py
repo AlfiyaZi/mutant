@@ -72,8 +72,13 @@ class PythonParser(object):
             "options": options,
         }
 
+    @classmethod
+    def order_by_requisites(cls, schema):
+        requisites = cls.collect_requisites(schema)
+        return sorted(schema, key=cmp_by_requisites(requisites))
+
     @staticmethod
-    def order_by_requisites(schema):
+    def collect_requisites(schema):
         requisites = {}
         for entity in schema:
             for field in entity['fields']:
@@ -88,49 +93,31 @@ class PythonParser(object):
                         master = entity['name']
                         dependant = field['options']['entity']
                     requisites.setdefault(dependant, set()).add(master)
-
-        def recursive_requisites(name):
-            result = requisites.get(name, set())
-            more = set()
-            for subname in result:
-                more.update(recursive_requisites(subname))
-            return result | more
-
-        def cmp_by_requisites(a, b):
-            logger.debug('Compare %s to %s', a['name'], b['name'])
-            if b['name'] in recursive_requisites(a['name']):
-                return 1
-            elif a['name'] in recursive_requisites(b['name']):
-                return -1
-            else:
-                return cmp(a['name'], b['name'])
-
-        return sorted(schema, key=cmp_to_key(cmp_by_requisites))
+        return requisites
 
 
-def cmp_to_key(mycmp):
-    'Convert a cmp= function into a key= function'
+def cmp_by_requisites(requisites):
     class K(object):
         def __init__(self, obj, *args):
             self.obj = obj
 
         def __lt__(self, other):
-            return mycmp(self.obj, other.obj) < 0
+            a, b = self.obj['name'], other.obj['name']
+            logger.debug('Compare %s to %s', a, b)
+            if b in recursive_requisites(a):
+                return False
+            elif a in recursive_requisites(b):
+                return True
+            else:
+                return a < b
 
-        def __gt__(self, other):
-            return mycmp(self.obj, other.obj) > 0
+    def recursive_requisites(name):
+        result = requisites.get(name, set())
+        more = set()
+        for subname in result:
+            more.update(recursive_requisites(subname))
+        return result | more
 
-        def __eq__(self, other):
-            return mycmp(self.obj, other.obj) == 0
-
-        def __le__(self, other):
-            return mycmp(self.obj, other.obj) <= 0
-
-        def __ge__(self, other):
-            return mycmp(self.obj, other.obj) >= 0
-
-        def __ne__(self, other):
-            return mycmp(self.obj, other.obj) != 0
     return K
 
 
