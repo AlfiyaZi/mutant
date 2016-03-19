@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
+
 import logging
+
 from jinja2 import Template
 
 

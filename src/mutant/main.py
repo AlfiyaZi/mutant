@@ -30,7 +30,6 @@ def yaml_to_cerberus(definition='definition.yml'):
     return app.mutate('cerberus')
 
 
-
 def load_extension(app, name):
     package_name = 'mutant_' + name
     package = importlib.import_module(package_name)
