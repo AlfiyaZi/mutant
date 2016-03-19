@@ -2,11 +2,8 @@ from __future__ import unicode_literals
 import logging
 from jinja2 import Template
 
-from mutant.generators.base import BaseGenerator
-
 
 logger = logging.getLogger(__name__)
-
 
 
 FILE_TEMPLATE = Template("""
@@ -22,10 +19,9 @@ rules = {
 """.lstrip())
 
 
-class CerberusSchemaGenerator(BaseGenerator):
-    def __init__(self, schema, *args, **kwargs):
+class CerberusSchemaGenerator(object):
+    def __init__(self, schema):
         self.entities = schema
-        super(CerberusSchemaGenerator, self).__init__(*args, **kwargs)
 
     def render(self):
         return FILE_TEMPLATE.render(entities=self.entities)
