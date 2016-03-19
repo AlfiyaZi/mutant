@@ -1,7 +1,7 @@
 rules = {
     "Author": {
-        "username": {"type": "String"},
+        "username": {"type": "String", "required": True},
         "email": {"type": "Email"},
-        "password": {"type": "String"},
+        "password": {"type": "String", "required": True},
     },
 }

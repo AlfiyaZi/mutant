@@ -9,6 +9,6 @@ rules = {
         "tags": {"type": "List"},
     },
     "Tag": {
-        "name": {"type": "String"},
+        "name": {"type": "String", "required": True},
     },
 }

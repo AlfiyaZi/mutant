@@ -1,4 +1,4 @@
 Author:
     - username: {type: String, max_length: 30, primary-key: true}
     - email: Email
-    - password: {type: String, private: true, max_length: 255}
+    - password: {type: String, private: true, max_length: 255, required: true}
