@@ -1,11 +1,10 @@
 Blog:
     - title
-    - posts: {list-of: Post, own: true}
-
-Post:
-    - title
-    - body: Text
-    - tags: {list-of: Tag}
+    - posts:
+        list-of:
+            - title
+            - body: Text
+            - tags: {list-of: Tag}
 
 Tag:
     - name: {type: String, primary-key: true}

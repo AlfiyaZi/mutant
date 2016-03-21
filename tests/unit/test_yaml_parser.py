@@ -4,21 +4,19 @@ from mutant_yaml.parser import YamlParser
 def test_yaml_normalization():
     human_friendly = {
         'Department': [
-            {'title': 'String'},
-            {'employee': {'list-of': 'Employee'}},
-        ],
-        'Employee': [
-            {'first_name': 'String'},
+            'title',
+            {'employees': {'list-of': ['first_name']}},
         ],
     }
     high_level = {
         'Department': [
             {'title': {'type': 'String'}},
-            {'employee': {'type': 'List', 'entity': 'Employee'}},
+            {'employees': {'type': 'List', 'entity': 'Employee', 'own': True}},
         ],
         'Employee': [
             {'first_name': {'type': 'String'}},
         ],
     }
-    result = YamlParser.normalize_schema(human_friendly)
+    parser = YamlParser()
+    result = parser.normalize_schema(human_friendly)
     assert result == high_level
