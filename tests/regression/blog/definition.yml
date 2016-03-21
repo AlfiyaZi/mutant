@@ -1,9 +1,9 @@
 Blog:
-    - title: String
+    - title
     - posts: {list-of: Post, own: true}
 
 Post:
-    - title: String
+    - title
     - body: Text
     - tags: {list-of: Tag}
 

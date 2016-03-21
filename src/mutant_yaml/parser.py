@@ -1,5 +1,6 @@
 import yaml
 import logging
+import collections
 from six import string_types
 from mutant.parsers.python_parser import PythonParser
 
@@ -19,13 +20,25 @@ class YamlParser(object):
     def normalize_schema(cls, entities):
         custom_types = entities.keys()
         return {
-            entity: [cls.normalize_field(field, custom_types) for field in fields]
+            entity: cls.normalize_fields(fields, custom_types)
             for entity, fields in entities.items()
         }
 
     @classmethod
+    def normalize_fields(cls, fields, custom_types):
+        if isinstance(fields, collections.Mapping):
+            return sorted([cls.normalize_field({name: field}, custom_types)
+                           for name, field in fields.items()])
+        else:
+            return [cls.normalize_field(field, custom_types)
+                    for field in fields]
+
+    @classmethod
     def normalize_field(cls, field_def, custom_types):
-        field_name, field = next(iter(field_def.items()))
+        if isinstance(field_def, collections.Mapping):
+            field_name, field = next(iter(field_def.items()))
+        else:
+            field_name, field = field_def, 'String'
         if isinstance(field, string_types):
             field = {'type': field}
         n_field = {
