@@ -7,7 +7,7 @@ Consider for example, having an application, that stores basic User information.
 Let's pretend it's not an abstract user, but Author.
 Here is how a Author entity can be described using Mutant YAML format:
 
-.. literalinclude:: ../tests/regression/author/defition.yml
+.. literalinclude:: ../tests/regression/author/definition.yml
     :linenos:
     :language: yaml
 
@@ -43,8 +43,8 @@ Let's define blog entity structure. Each `Blog` has `Posts`, that link to `Tags`
 
 Here we see several features:
 
-    * Inline entity definition - Blog contains Posts;
-    * Many-to-Many relations - each Post can have many Tags and each Tag may be linked to many Posts;
+* Inline entity definition - Blog contains Posts;
+* Many-to-Many relations - each Post can have many Tags and each Tag may be linked to many Posts;
 
 Here is Django's models.py:
 
