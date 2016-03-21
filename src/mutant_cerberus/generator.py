@@ -18,11 +18,16 @@ rules = {
 
 
 ENTITY_TEMPLATE = Template("""
-"{{ entity['name'] }}": {
-    {%- for field in entity['fields'] %}
-    {{ render_field(field) }}
-    {%- endfor %}
-},
+"{{ entity['name'] }}": {{ render_entity_body(entity) }},
+""".strip())
+
+
+ENTITY_BODY_TEMPLATE = Template("""
+{
+{%- for field in entity['fields'] %}
+{{ render_field(field) }}
+{%- endfor %}
+}
 """.strip())
 
 
@@ -38,7 +43,7 @@ OPTIONS = (
     ('allowed', False),
     ('empty', False),
     ('items', True),
-    ('schema', True),
+    ('schema', False),
     ('valueschema', True),
     ('propertyschema', True),
     ('regex', True),
@@ -71,6 +76,14 @@ TYPE_MAPPINGS = {
 }
 
 
+ALIASES = {
+    'schema': 'entity',
+}
+
+
+FIELD_PATTERN = '"{name}": {{\n{options}\n}},'
+
+
 class CerberusSchemaGenerator(object):
     def __init__(self, schema):
         self.entities = schema
@@ -84,19 +97,29 @@ class CerberusSchemaGenerator(object):
     def render_entity(self, entity):
         return ENTITY_TEMPLATE.render(
             entity=entity,
+            render_entity_body=lambda x: self.indent(self.render_entity_body(x)).lstrip(),
+        )
+
+    def render_entity_body(self, entity):
+        return ENTITY_BODY_TEMPLATE.render(
+            entity=entity,
             render_field=self.render_field,
         )
 
     def render_field(self, field):
-        PATTERN = '"{name}": {{{options}}},'
-        f_options = [self.render_option('type', True, {'type': TYPE_MAPPINGS[field['type']]})]
         self.apply_triggers(field)
+        full_options = dict(field['options'], type=field['type'])
+        rendered_options = []
         for option, is_quoted in OPTIONS:
-            f_option = self.render_option(option, is_quoted, field['options'])
-            if f_option is not None:
-                f_options.append(f_option)
-        options = ', '.join(f_options)
-        return PATTERN.format(name=field['name'], options=options)
+            rendered = self.render_option(option, is_quoted, full_options)
+            if rendered is not None:
+                rendered_options.append(rendered)
+        return self.indent(
+            FIELD_PATTERN.format(
+                name=field['name'],
+                options=self.indent('\n'.join(rendered_options)),
+            )
+        )
 
     @staticmethod
     def apply_triggers(field):
@@ -104,15 +127,32 @@ class CerberusSchemaGenerator(object):
             if trigger in field['options']:
                 field['options'].setdefault(option, field['options'][trigger])
 
-    def render_option(self, option, is_quoted, field_options):
-        OPT_PATTERN = '"{key}": {value}'
-        if option in field_options:
-            value = field_options[option]
-            if is_quoted:
+    def render_option(self, key, is_quoted, field_options):
+        OPT_PATTERN = '"{key}": {value},'
+        aliased = ALIASES.get(key, key)
+        if aliased in field_options:
+            value = field_options[aliased]
+            if key == 'type':
+                value = TYPE_MAPPINGS[value]
+            if key == 'schema':
+                if field_options['type'] == 'List':
+                    value = self.embed_entity(field_options[aliased]).lstrip()
+            elif is_quoted:
                 value = '"{0}"'.format(value)
-            elif option == 'schema' and field_options['type'] == 'List':
-                value = self.render_entity(self.entities[field_options['schema']])
-            return OPT_PATTERN.format(key=option, value=value)
+            return OPT_PATTERN.format(key=key, value=value)
+
+    def embed_entity(self, entity_name):
+        for entity in self.entities:
+            if entity_name == entity['name']:
+                return self.render_entity_body(entity)
+        raise KeyError(entity_name)
+
+    def indent(self, text):
+        return '\n'.join([
+            '    ' + line
+            for line in text.splitlines()
+        ])
+
 
 
 def register(app):

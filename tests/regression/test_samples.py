@@ -28,10 +28,10 @@ class YamlToDjangoRegressionTestCase(unittest.TestCase):
         models = yaml_to_django(here(dirname, "definition.yml"))
         with open(here(dirname, "models.py")) as fp:
             expect = fp.read()
-        assert models == expect
+        assert expect == models
 
     def yaml_to_cerberus(self, dirname):
         schema = yaml_to_cerberus(here(dirname, "definition.yml"))
         with open(here(dirname, "cerberus.py")) as fp:
             expect = fp.read().rstrip()
-        assert schema == expect
+        assert expect == schema
