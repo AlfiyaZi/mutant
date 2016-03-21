@@ -60,7 +60,7 @@ class YamlParser(object):
             assert 'type' not in n_field, 'Keys `list-of` and `type` can not be used simultaneosly in field definition'
             n_field['type'] = 'List'
             linked_type = n_field.pop('list_of')
-            if not isinstance(linked_type, basestring):
+            if not isinstance(linked_type, string_types):
                 new_entity_name = self.make_entity_name(field_name)
                 self.embedded.update(
                     self.normalize_entity(new_entity_name, linked_type, custom_types)
