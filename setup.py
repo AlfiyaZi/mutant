@@ -23,7 +23,7 @@ test_requirements = [
 
 setup(
     name='mutant',
-    version='0.1.0',
+    version='1.0.0',
     description="Python Schema Generator generates all schemas using one source definition",
     long_description=readme + '\n\n' + history,
     author="Peter Demin",
