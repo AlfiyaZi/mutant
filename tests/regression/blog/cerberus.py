@@ -1,14 +1,14 @@
 rules = {
     "Blog": {
-        "title": {"type": "String"},
-        "posts": {"type": "List"},
+        "title": {"type": "string"},
+        "posts": {"type": "list"},
     },
     "Post": {
-        "title": {"type": "String"},
-        "body": {"type": "Text"},
-        "tags": {"type": "List"},
+        "title": {"type": "string"},
+        "body": {"type": "string"},
+        "tags": {"type": "list"},
     },
     "Tag": {
-        "name": {"type": "String", "required": True},
+        "name": {"type": "string", "required": True},
     },
 }
