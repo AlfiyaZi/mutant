@@ -28,7 +28,8 @@ class YamlParser(object):
     def normalize_fields(cls, fields, custom_types):
         if isinstance(fields, collections.Mapping):
             return sorted([cls.normalize_field({name: field}, custom_types)
-                           for name, field in fields.items()])
+                           for name, field in fields.items()],
+                          key=lambda x: list(x.keys()))
         else:
             return [cls.normalize_field(field, custom_types)
                     for field in fields]
