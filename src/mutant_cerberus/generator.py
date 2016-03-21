@@ -154,6 +154,5 @@ class CerberusSchemaGenerator(object):
         ])
 
 
-
 def register(app):
     app.register_generator('cerberus', CerberusSchemaGenerator)
