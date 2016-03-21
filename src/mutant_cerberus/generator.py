@@ -68,9 +68,11 @@ TYPE_MAPPINGS = {
     'Boolean': 'boolean',
     'Datetime': 'datetime',
     'List': 'list',
+    'Link': 'dict',
 
     'Email': 'string',
     'Text': 'string',
+    'Date': 'datetime',
     # 'dict
     # 'set
 }
@@ -136,10 +138,22 @@ class CerberusSchemaGenerator(object):
                 value = TYPE_MAPPINGS[value]
             if key == 'schema':
                 if field_options['type'] == 'List':
+                    value = self.embed_entity_list(field_options[aliased]).lstrip()
+                if field_options['type'] == 'Link':
                     value = self.embed_entity(field_options[aliased]).lstrip()
             elif is_quoted:
                 value = '"{0}"'.format(value)
             return OPT_PATTERN.format(key=key, value=value)
+
+    def embed_entity_list(self, entity_name):
+        return (
+            self.indent(
+                '{{\n'
+                '"type": "dict",\n'
+                '"schema": {0},\n'.format(self.embed_entity(entity_name))
+            ) +
+            '\n}'
+        )
 
     def embed_entity(self, entity_name):
         for entity in self.entities:

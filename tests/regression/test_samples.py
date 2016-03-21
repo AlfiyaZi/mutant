@@ -19,6 +19,7 @@ class YamlToDjangoRegressionTestCase(unittest.TestCase):
 
     def test_musician(self):
         self.yaml_to_django("musician")
+        self.yaml_to_cerberus("musician")
 
     def test_blog(self):
         self.yaml_to_django("blog")

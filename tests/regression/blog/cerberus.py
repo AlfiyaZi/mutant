@@ -6,18 +6,24 @@ rules = {
         "posts": {
             "type": "list",
             "schema": {
-                "title": {
-                    "type": "string",
-                },
-                "body": {
-                    "type": "string",
-                },
-                "tags": {
-                    "type": "list",
-                    "schema": {
-                        "name": {
-                            "type": "string",
-                            "required": True,
+                "type": "dict",
+                "schema": {
+                    "title": {
+                        "type": "string",
+                    },
+                    "body": {
+                        "type": "string",
+                    },
+                    "tags": {
+                        "type": "list",
+                        "schema": {
+                            "type": "dict",
+                            "schema": {
+                                "name": {
+                                    "type": "string",
+                                    "required": True,
+                                },
+                            },
                         },
                     },
                 },
@@ -34,9 +40,12 @@ rules = {
         "tags": {
             "type": "list",
             "schema": {
-                "name": {
-                    "type": "string",
-                    "required": True,
+                "type": "dict",
+                "schema": {
+                    "name": {
+                        "type": "string",
+                        "required": True,
+                    },
                 },
             },
         },
