@@ -7,7 +7,9 @@ Consider for example, having an application, that stores basic User information.
 Let's pretend it's not an abstract user, but Author.
 Here is how a Author entity can be described using Mutant YAML format:
 
-.. include:: ../tests/regression/author/defition.yml
+.. literalinclude:: ../tests/regression/author/defition.yml
+    :linenos:
+    :language: yaml
 
 At the command line::
     
@@ -15,11 +17,15 @@ At the command line::
 
 Will produce following django model definition file:
 
-.. include:: ../tests/regression/author/models.py
+.. literalinclude:: ../tests/regression/author/models.py
+    :linenos:
+    :language: python
 
 If application is meant to accept new entities, Cerberus validation rules may come in hand:
 
-.. include:: ../tests/regression/author/cerberus.py
+.. literalinclude:: ../tests/regression/author/cerberus.py
+    :linenos:
+    :language: python
 
 It's the basics of Mutant - define entity schema once and derive (mutate) it to all forms you need.
 
@@ -31,7 +37,9 @@ Mutant accepts (extendable) list of input formats. We'll use YAML for it's human
 
 Let's define blog entity structure. Each `Blog` has `Posts`, that link to `Tags`, which are simple strings:
 
-.. include:: ../tests/regression/blog/definition.yml
+.. literalinclude:: ../tests/regression/blog/definition.yml
+    :linenos:
+    :language: yaml
 
 Here we see several features:
 
@@ -40,4 +48,6 @@ Here we see several features:
 
 Here is Django's models.py:
 
-.. include:: ../tests/regression/blog/models.py
+.. literalinclude:: ../tests/regression/blog/models.py
+    :linenos:
+    :language: python
