@@ -1,4 +1,4 @@
-pyyaml
-jinja2
-six
-inflect
+Jinja2>=2.8
+PyYAML>=3.11
+inflect>=0.2.5
+six>=1.10.0
