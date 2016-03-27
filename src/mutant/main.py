@@ -23,7 +23,6 @@ def yaml_to_django(definition='definition.yml'):
 def yaml_to_cerberus(definition='definition.yml'):
     app = MutantApp()
     attach_builtins(app)
-    load_extension(app, 'django')
     load_extension(app, 'yaml')
     load_extension(app, 'cerberus')
     app.parse('yaml', definition)
@@ -34,6 +33,10 @@ def load_extension(app, name):
     package_name = 'mutant_' + name
     package = importlib.import_module(package_name)
     package.register(app)
+
+
+def load_entry_points(app):
+    pass
 
 
 def main(*args, **kwargs):
