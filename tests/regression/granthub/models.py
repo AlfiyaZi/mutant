@@ -38,7 +38,6 @@ class DeletedField(models.BooleanField):
         super(DeletedField, self).__init__(*args, **kwargs)
 
 
-
 @python_2_unicode_compatible
 class Account(models.Model):
 
@@ -69,7 +68,6 @@ class Authority(models.Model):
 
     def __str__(self):
         return self.name
-
 
 
 @python_2_unicode_compatible
@@ -133,7 +131,9 @@ class AwardAwardeeManager(models.Manager):
 
         sql = "INSERT INTO %(table)s (%(award_field)s, %(awardee_field)s) " \
               "SELECT %(award_id)d, %(awardee_id)d " \
-              "WHERE NOT EXISTS (SELECT 1 FROM %(table)s WHERE %(award_field)s=%(award_id)d AND %(awardee_field)s=%(awardee_id)d)" % params
+              "WHERE NOT EXISTS (SELECT 1 FROM %(table)s " \
+              "WHERE %(award_field)s=%(award_id)d " \
+              "AND %(awardee_field)s=%(awardee_id)d)" % params
 
         return cursor.execute(sql)
 
@@ -194,7 +194,10 @@ class AwardPersonManager(models.Manager):
 
         sql = "INSERT INTO %(table)s (award_id, person_id, role_id) " \
               "SELECT %(award_id)d, %(person_id)d, %(role_id)d " \
-              "WHERE NOT EXISTS (SELECT 1 FROM %(table)s WHERE award_id=%(award_id)d AND person_id=%(person_id)d AND role_id=%(role_id)d)" % params
+              "WHERE NOT EXISTS (SELECT 1 FROM %(table)s " \
+              "WHERE award_id=%(award_id)d " \
+              "AND person_id=%(person_id)d " \
+              "AND role_id=%(role_id)d)" % params
 
         return cursor.execute(sql)
 
@@ -324,7 +327,6 @@ def update_ancestor(sender, instance, **kwargs):
                 )
 
 
-
 @python_2_unicode_compatible
 class Person(models.Model):
 
@@ -345,7 +347,6 @@ class Person(models.Model):
 
     def __str__(self):
         return "%s %s" % (self.first_name, self.last_name)
-
 
 
 @python_2_unicode_compatible
