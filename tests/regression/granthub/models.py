@@ -106,7 +106,6 @@ class AwardAwardeeManager(models.Manager):
     class Meta:
         default_permissions = tuple()
 
-
     def create(self, award, awardee):
         if not awardee.pk:
             raise Exception("Awardee has not been saved")
@@ -176,7 +175,6 @@ class AwardPersonManager(models.Manager):
 
     class Meta:
         default_permissions = tuple()
-
 
     def create(self, award, person, role):
         """
