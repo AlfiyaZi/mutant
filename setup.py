@@ -36,7 +36,11 @@ setup(
         'mutant_short',
         'mutant_cerberus',
     ],
-    scripts=['scripts/mutate'],
+    entry_points={
+        'console_scripts': [
+            'mutate = mutant.main:main',
+        ],
+    },
     package_dir={'': 'src'},
     include_package_data=True,
     install_requires=requirements,
