@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from mutant.parsers.python_parser import PythonParser
 
@@ -35,12 +36,7 @@ class MutantApp(object):
         2) Apply middleware;
         3) Parse schema to internal format.
         """
-        reader = self.readers[reader_name]
-        if hasattr(file_or_name, 'read'):
-            data = reader.read(file_or_name)
-        else:
-            with open(file_or_name) as fp:
-                data = reader.read(fp)
+        data = self._read(reader_name, file_or_name)
         for middleware in self.parser_middlewares:
             if hasattr(middleware, 'before_parse'):
                 data = middleware.before_parse(data)
@@ -53,3 +49,14 @@ class MutantApp(object):
 
     def mutate(self, generator_name):
         return self.generators[generator_name](self.schema).render()
+
+    def _read(self, reader_name, file_or_name):
+        reader = self.readers[reader_name]
+        if hasattr(file_or_name, 'read'):
+            return reader.read(file_or_name)
+        else:
+            if file_or_name == '-':
+                return reader.read(sys.stdin)
+            else:
+                with open(file_or_name) as fp:
+                    return reader.read(fp)
