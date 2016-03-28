@@ -1,36 +1,54 @@
 import logging
 
+from mutant.parsers.python_parser import PythonParser
+
 
 logger = logging.getLogger(__name__)
 
 
 class MutantApp(object):
     """
-    App stores all parsers, fields and generators.
+    App stores all readers, parser middlewares generators.
     All plugins can register themselves on this instance.
-    And finally it has `run` method, that executes mutation.
+    And finally it has `parse` and `mutate` methods, that executes mutation.
     """
 
     def __init__(self):
-        self.parsers = {}
+        self.readers = {}
+        self.parser_middlewares = []
         self.generators = {}
+        self.parser = PythonParser()
 
-    def register_entity(self, name, fields):
-        self.fields[name] = self.field_maker(name)
+    def register_reader(self, name, reader):
+        self.readers[name] = reader
 
-    def register_parser(self, name, parser):
-        self.parsers[name] = parser
+    def register_parser_middleware(self, middleware):
+        self.parser_middlewares.append(middleware)
 
     def register_generator(self, generator_name, generator_class):
         self.generators[generator_name] = generator_class
 
-    def parse(self, parser_name, file_or_name):
-        parser = self.parsers[parser_name]
+    def parse(self, reader_name, file_or_name):
+        """
+        Parsing contains 3 steps:
+        1) Read input file;
+        2) Apply middleware;
+        3) Parse schema to internal format.
+        """
+        reader = self.readers[reader_name]
         if hasattr(file_or_name, 'read'):
-            self.schema = parser.parse(file_or_name)
+            data = reader.read(file_or_name)
         else:
             with open(file_or_name) as fp:
-                self.schema = parser.parse(fp)
+                data = reader.read(fp)
+        for middleware in self.parser_middlewares:
+            if hasattr(middleware, 'before_parse'):
+                data = middleware.before_parse(data)
+        schema = self.parser.parse(data)
+        for middleware in reversed(self.parser_middlewares):
+            if hasattr(middleware, 'after_parse'):
+                schema = middleware.after_parse(schema)
+        self.schema = schema
         return self.schema
 
     def mutate(self, generator_name):
