@@ -17,12 +17,7 @@ def yaml_to_django(definition='definition.yml'):
 
 def yaml_to_cerberus(definition='definition.yml'):
     app = MutantApp()
-<<<<<<< HEAD
     load_extension(app, 'short')
-=======
-    attach_builtins(app)
-    load_extension(app, 'django')
->>>>>>> parent of a06ab2e... Adding hooks to Python parser
     load_extension(app, 'yaml')
     load_extension(app, 'cerberus')
     app.parse('yaml', definition)
