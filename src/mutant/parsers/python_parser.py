@@ -43,60 +43,34 @@ class PythonParser(object):
             },
         ]
     """
-    def __init__(self):
-        self.hooks = {
-            'pre': {
-                'schema': [],
-                'entity': [],
-                'field': [],
-            },
-            'post': {
-                'schema': [],
-                'entity': [],
-                'field': [],
-            },
-        }
-
-    def register_pre_hook(self, kind, hook):
-        self.hooks['pre'][kind].append(hook)
-
-    def register_post_hook(self, kind, hook):
-        self.hooks['post'][kind].append(hook)
 
     def parse(self, definition):
         logger.debug(definition)
 
         schema = []
         for entity_name, field_defs in definition.items():
-            schema.append(self.define_entity(entity_name, field_defs))
-        return self.pipe_through_hooks('schema', self.order_by_requisites(schema))
+            fields = []
+            for data in field_defs:
+                assert len(data) == 1
+                name, parameters = next(iter(data.items()))
+                fields.append(self.define_field(name, parameters))
+            entity = {
+                "name": entity_name,
+                "fields": fields,
+                "options": {},
+            }
+            schema.append(entity)
+        return self.order_by_requisites(schema)
 
-    def define_entity(self, entity_name, field_defs):
-        fields = []
-        for data in field_defs:
-            assert len(data) == 1
-            name, parameters = next(iter(data.items()))
-            fields.append(self.define_field(name, parameters))
-        return self.pipe_through_hooks('entity', {
-            "name": entity_name,
-            "fields": fields,
-            "options": {},
-        })
-
-    def define_field(self, name, parameters):
+    @staticmethod
+    def define_field(name, parameters):
         options = dict(parameters)
         typename = options.pop('type')
-        return self.pipe(self.hooks['post']['field'], {
+        return {
             "type": typename,
             "name": name,
             "options": options,
-        })
-
-    @staticmethod
-    def pipe(funcs, arg):
-        for func in funcs:
-            arg = func(arg)
-        return arg
+        }
 
     @classmethod
     def order_by_requisites(cls, schema):
