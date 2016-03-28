@@ -1,1 +1,1 @@
-from .parser import register  # noqa
+from .reader import register  # noqa

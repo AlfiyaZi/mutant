@@ -1,23 +1,22 @@
-import yaml
 import itertools
 import logging
 import collections
 from six import string_types
-from mutant.parsers.python_parser import PythonParser
 import inflect
 
 
 logger = logging.getLogger(__name__)
 
 
-class YamlParser(object):
+class ShorthandMiddleware(object):
     def __init__(self, *args, **kwargs):
-        self.real_parser = PythonParser(*args, **kwargs)
         self.embedded = {}
 
-    def parse(self, stream):
-        definition = self.normalize_schema(yaml.load(stream))
-        return self.real_parser.parse(definition)
+    def before_parse(self, definition):
+        return self.normalize_schema(definition)
+
+    def after_parse(self, result):
+        return result
 
     def normalize_schema(self, entities):
         custom_types = entities.keys()
@@ -90,5 +89,5 @@ class YamlParser(object):
 
 
 def register(app):
-    parser = YamlParser()
-    app.register_parser('yaml', parser)
+    middleware = ShorthandMiddleware()
+    app.register_parser_middleware(middleware)

@@ -1,4 +1,4 @@
-from mutant_yaml.parser import YamlParser
+from mutant_short.middleware import ShorthandMiddleware
 
 
 def test_yaml_normalization():
@@ -17,6 +17,6 @@ def test_yaml_normalization():
             {'first_name': {'type': 'String'}},
         ],
     }
-    parser = YamlParser()
-    result = parser.normalize_schema(human_friendly)
+    middleware = ShorthandMiddleware()
+    result = middleware.before_parse(human_friendly)
     assert result == high_level
