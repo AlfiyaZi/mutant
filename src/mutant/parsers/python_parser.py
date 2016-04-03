@@ -111,11 +111,14 @@ def cmp_by_requisites(requisites):
             else:
                 return a < b
 
-    def recursive_requisites(name):
+    def recursive_requisites(name, parents=None):
+        if parents is None:
+            parents = set()
         result = requisites.get(name, set())
         more = set()
         for subname in result:
-            more.update(recursive_requisites(subname))
+            if subname not in parents:
+                more.update(recursive_requisites(subname, result))
         return result | more
 
     return K

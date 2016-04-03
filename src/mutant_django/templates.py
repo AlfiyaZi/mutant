@@ -16,6 +16,9 @@ from django.db import models
 DJANGO_MODEL_TEMPLATE = Template("""
 class {{ name }}(models.Model):
   {%- for field in fields -%}
+    {{ field.render_choices() }}
+  {%- endfor -%}
+  {%- for field in fields -%}
     {{ field.render() }}
   {%- endfor -%}
 """.lstrip())

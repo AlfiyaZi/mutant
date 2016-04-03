@@ -10,33 +10,78 @@ import inflect
 logger = logging.getLogger(__name__)
 
 
+SIMPLE_MAPPINGS = (
+    'Auto',
+    'BigInteger',
+    'Binary',
+    'Boolean',
+    'Char',
+    'CommaSeparatedInteger',
+    'Date',
+    'Decimal',
+    'Duration',
+    'Email',
+    'File',
+    'FilePath',
+    'Float',
+    'GenericIPAddress',
+    'Image',
+    'Integer',
+    'NullBoolean',
+    'PositiveInteger',
+    'PositiveSmallInteger',
+    'Slug',
+    'SmallInteger',
+    'Text',
+    'Time',
+    'URL',
+    'UUID',
+)
+
+
 class DjangoSchemaGenerator(BaseGenerator):
     def __init__(self, schema, *args, **kwargs):
         self.entities = schema
         super(DjangoSchemaGenerator, self).__init__(*args, **kwargs)
         self.field_generators = {
             'String': DjangoString,
-            'Text': DjangoText,
             'Email': DjangoEmail,
-            'Integer': DjangoInteger,
-            'Date': DjangoDate,
             'Link': DjangoForeignKey,
             'List': DjangoList,
+            'Datetime': DjangoDatetime,
         }
+        self.field_generators.update({
+            typename: create_simple_mapping_field(typename)
+            for typename in SIMPLE_MAPPINGS
+        })
 
     def render(self):
         return DJANGO_FILE_TEMPLATE.render(entities=self._renderers())
 
     def _renderers(self):
+        entity_renderers = self.create_field_generators()
+        self.create_additional_renderers(entity_renderers)
+        self.transfer_foreign_keys(entity_renderers)
+        return entity_renderers
+
+    def create_field_generators(self):
         entity_renderers = []
         for entity in self.entities:
-            fgs = [
-                self.field_generators[field['type']].for_field(field)
-                for field in entity['fields']
-            ]
+            fgs = []
+            for field in entity['fields']:
+                if field['type'] in self.field_generators:
+                    fgs.append(self.field_generators[field['type']].for_field(field))
+                else:
+                    raise KeyError("Unknown Django field type '{0}': {1} in entity {2}"
+                                   .format(field['type'], field, entity['name']))
             entity_renderers.append(DjangoEntity(entity['name'], fgs))
+        return entity_renderers
+
+    def create_additional_renderers(self, entity_renderers):
         for renderer in list(entity_renderers):
             entity_renderers.extend(renderer.additional_renderers())
+
+    def transfer_foreign_keys(self, entity_renderers):
         transfers = []
         for renderer in entity_renderers:
             transfers.extend(renderer.transfer_foreign_keys())
@@ -45,7 +90,6 @@ class DjangoSchemaGenerator(BaseGenerator):
                 if renderer.entity_name == entity_name:
                     renderer.fields.append(new_field)
                     break
-        return entity_renderers
 
 
 class DjangoEntity(object):
@@ -105,6 +149,9 @@ class DjangoBase(JinjaFieldGenerator):
         super(DjangoBase, self).__init__(name, options)
         for key, value in dict(self.MUTANT_DEFAULTS).items():
             self.options.setdefault(key, value)
+        if 'choices' in self.options:
+            self.choices = DjangoChoices(name, self.options)
+            self.options['choices'] = self.choices.attribute_value()
         self.options.update({
             'django_field': self.DJANGO_FIELD,
             'django_positional': self.django_positional(),
@@ -135,6 +182,35 @@ class DjangoBase(JinjaFieldGenerator):
 
     def transfer_foreign_keys(self, *args, **kwargs):
         return []
+
+    def render_choices(self):
+        if hasattr(self, 'choices'):
+            return self.choices.render_choices()
+        else:
+            return ''
+
+
+class DjangoChoices(object):
+    def __init__(self, name, options):
+        self.name = name
+        self.choices = options['choices']
+        inflector = inflect.engine()
+        self.plural_name = inflector.plural_noun(self.name).upper()
+
+    def render_choices(self):
+        name = self.name.upper()
+        result = []
+        for choice in self.choices:
+            result.append('{0}_{1} = "{1}"'.format(name, choice.upper()))
+        result.append("{0} = (".format(self.plural_name))
+        for choice in self.choices:
+            result.append('    ({0}_{1}, "{2}"),'.format(name, choice.upper(), choice))
+        result.append(")")
+        return '\n'.join(['    ' + line
+                          for line in result])
+
+    def attribute_value(self):
+        return self.plural_name
 
 
 class DjangoForeignKey(DjangoBase):
@@ -222,16 +298,12 @@ class DjangoEmail(DjangoString):
     )
 
 
-class DjangoText(DjangoBase):
-    DJANGO_FIELD = "TextField"
+class DjangoDatetime(DjangoBase):
+    DJANGO_FIELD = "DateTimeField"
 
 
-class DjangoInteger(DjangoBase):
-    DJANGO_FIELD = "IntegerField"
-
-
-class DjangoDate(DjangoBase):
-    DJANGO_FIELD = "DateField"
+def create_simple_mapping_field(typename):
+    return type('Django' + typename, (DjangoBase,), {'DJANGO_FIELD': typename + 'Field'})
 
 
 class DerivedEntity(object):

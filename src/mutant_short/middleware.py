@@ -19,9 +19,10 @@ class ShorthandMiddleware(object):
         return result
 
     def normalize_schema(self, entities):
-        custom_types = entities.keys()
+        self.custom_types = entities.keys()
+        self.shorthand_fields = entities.pop('SHORTHANDS', {})
         result = [
-            self.normalize_entity(entity, fields, custom_types)
+            self.normalize_entity(entity, fields)
             for entity, fields in entities.items()
         ]
         result.append(self.embedded)
@@ -29,22 +30,22 @@ class ShorthandMiddleware(object):
             x.items() for x in result
         ))
 
-    def normalize_entity(self, entity, fields, custom_types):
+    def normalize_entity(self, entity, fields):
         result = {
-            entity: self.normalize_fields(fields, custom_types)
+            entity: self.normalize_fields(fields)
         }
         return result
 
-    def normalize_fields(self, fields, custom_types):
+    def normalize_fields(self, fields):
         if isinstance(fields, collections.Mapping):
-            return sorted([self.normalize_field({name: field}, custom_types)
+            return sorted([self.normalize_field({name: field})
                            for name, field in fields.items()],
                           key=lambda x: list(x.keys()))
         else:
-            return [self.normalize_field(field, custom_types)
+            return [self.normalize_field(field)
                     for field in fields]
 
-    def normalize_field(self, field_def, custom_types):
+    def normalize_field(self, field_def):
         if isinstance(field_def, collections.Mapping):
             field_name, field = next(iter(field_def.items()))
         else:
@@ -62,7 +63,7 @@ class ShorthandMiddleware(object):
             if not isinstance(linked_type, string_types):
                 new_entity_name = self.make_entity_name(field_name)
                 self.embedded.update(
-                    self.normalize_entity(new_entity_name, linked_type, custom_types)
+                    self.normalize_entity(new_entity_name, linked_type)
                 )
                 linked_type = new_entity_name
                 n_field['own'] = True
@@ -71,7 +72,12 @@ class ShorthandMiddleware(object):
                 'entity': linked_type,
             })
         assert 'type' in n_field, 'Key `type` must be defined for field %s' % (field_name)
-        if n_field['type'] in custom_types:
+        if n_field['type'] in self.shorthand_fields:
+            s_field = self.shorthand_fields[n_field['type']]
+            for key, value in s_field.items():
+                n_field.setdefault(key, value)
+            n_field['type'] = s_field['type']
+        if n_field['type'] in self.custom_types:
             n_field.update({
                 'type': 'Link',
                 'entity': n_field['type'],

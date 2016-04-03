@@ -1,12 +1,7 @@
 Award:
-    - pid:
-        type: String
-        maxlength: 100
-        required: True
-        empty: False
-        coerce: int
+    - pid: Pid
     - number: {type: String, maxlength: 64, required: True}
-    - full_number
+    - full_number: String
     - project_start: Datetime
     - project_end: Datetime
     - fiscal_year: {type: String, regex: "^\\d{4}$", coerce: int}
@@ -15,24 +10,47 @@ Award:
     - title: {type: String, maxlength: 256}
     - awardees: {list-of: Awardee}
     - persons: {list-of: Person}
-    - funding_institution: {type: String, maxlength: 50, required: True}
-    # - attributes: ATTRIBUTES_RULE
+    - funding_institution: FundingInstitution
+    - attributes: Attributes
 Person:
-    - pid: {type: String, maxlength: 100, required: True, empty: False, coerce: int}
+    - pid: Pid
     - first_name: {type: String, maxlength: 100}
     - given_names: {type: String, maxlength: 256}
     - last_name: {type: String, maxlength: 100}
     - accounts:
         list-of:
-            - pid: {type: String, maxlength: 100, required: True, empty: False, coerce: int}
+            - pid: Pid
             - email: Email
             - username: {type: String, maxlength: 100}
-            # - person_id: {type: integer, required: True}
-            # - attributes: ATTRIBUTES_RULE
+            - attributes: Attributes
 Awardee:
-    - pid: {type: String, maxlength: 100, required: True, empty: False, coerce: int}
+    - pid: Pid
     - name: {type: String, maxlength: 256, required: True, empty: False}
-    - award_id: {type: integer}
-    # - attributes: ATTRIBUTES_RULE
+    - award_id: {type: Integer}
+    - attributes: Attributes
+FundingInstitution:
+    code: {type: String, maxlength: 10, unique: True}
+    parent: FundingInstitution
+    name: String
+    standalone_name: Boolean
+    ancestor_or_self: String
+    category:
+        type: String
+        choices:
+            - Country
+            - Type
+            - Department
+            - Agency
+            - Funding unit
 SHORTHANDS:
-    shorthands.yml
+    Pid:
+        type: String
+        maxlength: 100
+        required: True
+        empty: False
+        coerce: int
+        verbose_name: Persistent ID
+    Attributes:
+        type: String
+        maxlength: 1024
+        required: False

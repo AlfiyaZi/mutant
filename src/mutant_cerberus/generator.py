@@ -89,6 +89,7 @@ FIELD_PATTERN = '"{name}": {{\n{options}\n}},'
 class CerberusSchemaGenerator(object):
     def __init__(self, schema):
         self.entities = schema
+        self.in_render = set()
 
     def render(self):
         return FILE_TEMPLATE.render(
@@ -103,10 +104,13 @@ class CerberusSchemaGenerator(object):
         )
 
     def render_entity_body(self, entity):
-        return ENTITY_BODY_TEMPLATE.render(
+        self.in_render.add(entity['name'])
+        result = ENTITY_BODY_TEMPLATE.render(
             entity=entity,
             render_field=self.render_field,
         )
+        self.in_render.remove(entity['name'])
+        return result
 
     def render_field(self, field):
         self.apply_triggers(field)
@@ -140,7 +144,11 @@ class CerberusSchemaGenerator(object):
                 if field_options['type'] == 'List':
                     value = self.embed_entity_list(field_options[aliased]).lstrip()
                 if field_options['type'] == 'Link':
-                    value = self.embed_entity(field_options[aliased]).lstrip()
+                    value = self.embed_entity(field_options[aliased])
+                    if value is None:
+                        return None
+                    else:
+                        value = value.lstrip()
             elif is_quoted:
                 value = '"{0}"'.format(value)
             return OPT_PATTERN.format(key=key, value=value)
@@ -156,6 +164,9 @@ class CerberusSchemaGenerator(object):
         )
 
     def embed_entity(self, entity_name):
+        if entity_name in self.in_render:
+            # recursive link, can not embed
+            return None
         for entity in self.entities:
             if entity_name == entity['name']:
                 return self.render_entity_body(entity)
