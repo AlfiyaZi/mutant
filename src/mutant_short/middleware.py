@@ -20,7 +20,7 @@ class ShorthandMiddleware(object):
 
     def normalize_schema(self, entities):
         self.custom_types = entities.keys()
-        self.shorthand_fields = entities.pop('SHORTHANDS', {})
+        self.shorthand_fields = self.normalize_shorthands(entities.pop('SHORTHANDS', {}))
         result = [
             self.normalize_entity(entity, fields)
             for entity, fields in entities.items()
@@ -29,6 +29,12 @@ class ShorthandMiddleware(object):
         return dict(itertools.chain.from_iterable(
             x.items() for x in result
         ))
+
+    def normalize_shorthands(self, shorthands):
+        return {
+            name: self.normalize_option_dict(options)
+            for name, options in shorthands.items()
+        }
 
     def normalize_entity(self, entity, fields):
         result = {
@@ -52,10 +58,15 @@ class ShorthandMiddleware(object):
             field_name, field = field_def, 'String'
         if isinstance(field, string_types):
             field = {'type': field}
-        n_field = {
-            self.normalize_option_name(name): value
-            for name, value in field.items()
-        }
+        if field_name == 'OPTIONS':
+            return {
+                field_name: [
+                    {self.normalize_option_name(name): value}
+                    for option in field
+                    for name, value in option.items()
+                ]
+            }
+        n_field = self.normalize_option_dict(field)
         if 'list_of' in n_field:
             assert 'type' not in n_field, 'Keys `list-of` and `type` can not be used simultaneosly in field definition'
             n_field['type'] = 'List'
@@ -83,6 +94,13 @@ class ShorthandMiddleware(object):
                 'entity': n_field['type'],
             })
         return {field_name: n_field}
+
+    @classmethod
+    def normalize_option_dict(cls, options):
+        return {
+            cls.normalize_option_name(name): value
+            for name, value in options.items()
+        }
 
     @staticmethod
     def normalize_option_name(name):

@@ -1,56 +1,88 @@
+Authority:
+    - code: Code
+    - name: {type: String, max-length: 128}
+    - description: {type: Text, blank: true}
+    - OPTIONS:
+        - verbose_name_plural: "Authorities"
 Award:
+    - authority: {type: Authority, "null": false, blank: false}
     - pid: Pid
-    - number: {type: String, maxlength: 64, required: True}
-    - full_number: String
+    - parent: Award
+    - number: {type: String, max-length: 64, "null": false, blank: false}
+    - full_number: {type: String, max-length: 96}
     - project_start: Datetime
     - project_end: Datetime
     - fiscal_year: {type: String, regex: "^\\d{4}$", coerce: int}
     - budget_start: Datetime
     - budget_end: Datetime
-    - title: {type: String, maxlength: 256}
+    - title: {type: String, max-length: 256}
     - awardees: {list-of: Awardee}
     - persons: {list-of: Person}
     - funding_institution: FundingInstitution
     - attributes: Attributes
+    - OPTIONS:
+        - default-field-options:
+            "null": true
+            blank: true
 Person:
     - pid: Pid
-    - first_name: {type: String, maxlength: 100}
-    - given_names: {type: String, maxlength: 256}
-    - last_name: {type: String, maxlength: 100}
-    - accounts:
-        list-of:
-            - pid: Pid
-            - email: Email
-            - username: {type: String, maxlength: 100}
-            - attributes: Attributes
+    - first_name: {type: String, max-length: 100}
+    - given_names: {type: String, max-length: 256}
+    - last_name: {type: String, max-length: 100}
+    - accounts: {list-of: Account, own: true}
+Account:
+    - pid: Pid
+    - authority: Authority
+    - email: Email
+    - username: {type: String, max-length: 100}
+    - attributes: Attributes
+    - OPTIONS:
+        - unique-together:
+            - pid
+            - authority
 Awardee:
     - pid: Pid
-    - name: {type: String, maxlength: 256, required: True, empty: False}
+    - name: {type: String, max-length: 256, required: true, empty: false}
     - award_id: {type: Integer}
     - attributes: Attributes
 FundingInstitution:
-    code: {type: String, maxlength: 10, unique: True}
-    parent: FundingInstitution
-    name: String
-    standalone_name: Boolean
-    ancestor_or_self: String
-    category:
+    - code: Code
+    - parent: {type: FundingInstitution, "null": true}
+    - name: {type: String, verbose_name: Canonical name, max-length: 100}
+    - standalone_name:
+        type: Boolean
+        verbose_name: Prefix with parent name it true
+        default: false
+    - category:
         type: String
+        max-length: 20
         choices:
             - Country
             - Type
             - Department
             - Agency
             - Funding unit
+    - ancestor_or_self: JsonList
+    - OPTIONS:
+        - verbose_name_plural: Funding Institutions
 SHORTHANDS:
     Pid:
         type: String
-        maxlength: 100
-        required: True
-        empty: False
+        max-length: 100
+        required: true
+        empty: false
+        "null": false
+        blank: false
         coerce: int
         verbose_name: Persistent ID
     Attributes:
         type: String
-        maxlength: 1024
-        required: False
+        max-length: 1024
+        required: false
+    Code:
+        type: String
+        max-length: 10
+        unique: true
+    JsonList:
+        type: String
+        blank: true

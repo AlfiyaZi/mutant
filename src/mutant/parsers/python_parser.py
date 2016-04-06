@@ -50,14 +50,18 @@ class PythonParser(object):
         schema = []
         for entity_name, field_defs in definition.items():
             fields = []
+            entity_options = []
             for data in field_defs:
                 assert len(data) == 1
                 name, parameters = next(iter(data.items()))
-                fields.append(self.define_field(name, parameters))
+                if name == 'OPTIONS':
+                    entity_options = parameters
+                else:
+                    fields.append(self.define_field(name, parameters))
             entity = {
                 "name": entity_name,
                 "fields": fields,
-                "options": {},
+                "options": entity_options,
             }
             schema.append(entity)
         return self.order_by_requisites(schema)

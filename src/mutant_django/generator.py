@@ -1,10 +1,12 @@
 import itertools
 import logging
 
+import inflect
+from six import string_types
+
 from mutant.generators.base import BaseGenerator
 from mutant.generators.utils import JinjaFieldGenerator
 from .templates import DJANGO_FILE_TEMPLATE, DJANGO_MODEL_TEMPLATE, DJANGO_FIELD_TEMPLATE
-import inflect
 
 
 logger = logging.getLogger(__name__)
@@ -74,7 +76,7 @@ class DjangoSchemaGenerator(BaseGenerator):
                 else:
                     raise KeyError("Unknown Django field type '{0}': {1} in entity {2}"
                                    .format(field['type'], field, entity['name']))
-            entity_renderers.append(DjangoEntity(entity['name'], fgs))
+            entity_renderers.append(DjangoEntity(entity['name'], fgs, entity['options']))
         return entity_renderers
 
     def create_additional_renderers(self, entity_renderers):
@@ -93,15 +95,17 @@ class DjangoSchemaGenerator(BaseGenerator):
 
 
 class DjangoEntity(object):
-    def __init__(self, entity_name, fields):
+    def __init__(self, entity_name, fields, options=None):
         self.entity_name = entity_name
         self.fields = fields
+        self.options = options or []
 
     def render(self):
         logger.debug(self.__dict__)
         return DJANGO_MODEL_TEMPLATE.render(
             name=self.entity_name,
             fields=self.fields,
+            model_meta=self.model_meta(),
             # options=self.entity_options
         )
 
@@ -116,6 +120,21 @@ class DjangoEntity(object):
             field.transfer_foreign_keys(self.entity_name)
             for field in self.fields
         )
+
+    def model_meta(self):
+        lines = []
+        for option in self.options:
+            if 'verbose_name_plural' in option:
+                break
+        else:
+            self.options.append({'verbose_name_plural': plural(self.entity_name)})
+        for option in self.options:
+            name, values = next(iter(option.items()))
+            if name == 'unique_together':
+                lines.append('{0} = {1}'.format(name, values))
+            elif name == 'verbose_name_plural':
+                lines.append('{0} = "{1}"'.format(name, values))
+        return lines
 
     def __repr__(self):
         return u'<{0} {1}>'.format(self.__class__.__name__, self.entity_name)
@@ -167,12 +186,22 @@ class DjangoBase(JinjaFieldGenerator):
         }
         return cls(name=field['name'], options=options)
 
+    @staticmethod
+    def quote(key, value):
+        if isinstance(value, string_types):
+            if key in ('on_delete', 'choices'):
+                return value
+            else:
+                return '"{0}"'.format(value)
+        else:
+            return value
+
     def django_positional(self):
         return []
 
     def django_attributes(self):
         return [
-            (key, self.options[key])
+            (key, self.quote(key, self.options[key]))
             for key, default_value in self.DJANGO_ATTRIBUTES
             if key in self.options and self.options[key] != default_value
         ]
@@ -194,20 +223,19 @@ class DjangoChoices(object):
     def __init__(self, name, options):
         self.name = name
         self.choices = options['choices']
-        inflector = inflect.engine()
-        self.plural_name = inflector.plural_noun(self.name).upper()
+        self.plural_name = plural(self.name).upper()
 
     def render_choices(self):
         name = self.name.upper()
         result = []
         for choice in self.choices:
-            result.append('{0}_{1} = "{1}"'.format(name, choice.upper()))
+            result.append('{0}_{1} = "{1}"'.format(name, choice.replace(' ', '_').upper()))
         result.append("{0} = (".format(self.plural_name))
         for choice in self.choices:
-            result.append('    ({0}_{1}, "{2}"),'.format(name, choice.upper(), choice))
+            result.append('    ({0}_{1}, "{2}"),'.format(name, choice.replace(' ', '_').upper(), choice))
         result.append(")")
-        return '\n'.join(['    ' + line
-                          for line in result])
+        return ''.join(['    ' + line + '\n'
+                        for line in result])
 
     def attribute_value(self):
         return self.plural_name
@@ -231,9 +259,7 @@ class DjangoForeignKey(DjangoBase):
         return super(DjangoForeignKey, self).django_attributes()
 
     def django_positional(self):
-        return [
-            "'{0}'".format(self.options['entity']),
-        ]
+        return [self.quote(None, self.options['entity'])]
 
 
 class DjangoList(DjangoBase):
@@ -259,9 +285,8 @@ class DjangoList(DjangoBase):
             return [self.many_to_many(entity)]
 
     def many_to_many(self, entity_name):
-        inflector = inflect.engine()
         from_name = entity_name.lower()
-        to_name = inflector.singular_noun(self.name)
+        to_name = singular(self.name)
         m2m_from = DjangoForeignKey(from_name, {'entity': entity_name, 'primary_key': True})
         m2m_to = DjangoForeignKey(to_name, {'entity': self.options['entity'], 'primary_key': True})
         return DjangoEntity(
@@ -317,6 +342,24 @@ class DerivedField(object):
     def __init__(self, name, options=None):
         self.name = name
         self.options = options or {}
+
+
+__inflector = None
+
+
+def inflector():
+    global __inflector
+    if __inflector is None:
+        __inflector = inflect.engine()
+    return __inflector
+
+
+def singular(word):
+    return inflector().singular_noun(word)
+
+
+def plural(word):
+    return inflector().plural_noun(word)
 
 
 def register(app):

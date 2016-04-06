@@ -1,3 +1,4 @@
+import sys
 import argparse
 import logging
 import importlib
@@ -62,4 +63,4 @@ def main(*args, **kwargs):
     options = parse_cli_options()
     app = create_app(options.reader, options.writer)
     app.parse(options.reader, options.definition)
-    print(app.mutate(options.writer))
+    sys.stdout.write(app.mutate(options.writer))

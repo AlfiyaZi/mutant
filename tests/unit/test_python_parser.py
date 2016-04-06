@@ -18,14 +18,14 @@ def test_python_parser_sample():
                 {'name': 'title', 'type': 'String', 'options': {}},
                 {'name': 'employee', 'type': 'List', 'options': {'entity': 'Employee'}},
             ],
-            'options': {},
+            'options': [],
         },
         {
             'name': 'Employee',
             'fields': [
                 {'name': 'first_name', 'type': 'String', 'options': {}},
             ],
-            'options': {},
+            'options': [],
         },
     ]
     parser = PythonParser()
