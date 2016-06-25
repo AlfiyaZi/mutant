@@ -27,7 +27,6 @@ def create_app(*extension_names):
 def load_extension(app, name):
     package_name = 'mutant_' + name
     package = importlib.import_module(package_name)
-    print(package.register)
     package.register(app)
 
 
