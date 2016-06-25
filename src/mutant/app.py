@@ -18,6 +18,7 @@ class MutantApp(object):
         self.readers = {}
         self.parser_middlewares = []
         self.generators = {}
+        self.generator_extensions = {}
         self.parser = PythonParser()
 
     def register_reader(self, name, reader):
@@ -28,6 +29,9 @@ class MutantApp(object):
 
     def register_generator(self, generator_name, generator_class):
         self.generators[generator_name] = generator_class
+
+    def extend_generator(self, generator_name, extension):
+        self.generator_extensions.setdefault(generator_name, []).append(extension)
 
     def parse(self, reader_name, file_or_name):
         """
@@ -48,7 +52,10 @@ class MutantApp(object):
         return self.schema
 
     def mutate(self, generator_name):
-        return self.generators[generator_name](self.schema).render()
+        gen = self.generators[generator_name](self.schema)
+        for ext in self.generator_extensions.get(generator_name, []):
+            gen.register_extension(ext)
+        return gen.render()
 
     def _read(self, reader_name, file_or_name):
         reader = self.readers[reader_name]

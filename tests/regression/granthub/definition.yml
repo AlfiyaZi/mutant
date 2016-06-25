@@ -76,8 +76,8 @@ SHORTHANDS:
         coerce: int
         verbose_name: Persistent ID
     Attributes:
-        type: String
-        max-length: 1024
+        type: JSON
+        blank: true
         required: false
     Code:
         type: String

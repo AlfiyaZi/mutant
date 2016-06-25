@@ -3,12 +3,14 @@ from jinja2 import Template
 
 DJANGO_FILE_TEMPLATE = Template("""
 from django.db import models
-
+{% for line in imports -%}
+{{ line }}
+{% endfor %}
 
 {% for entity in entities -%}
 {{ entity.render() }}{% if not loop.last %}
 
-{% endif%}
+{% endif %}
 {% endfor -%}
 """.lstrip())
 
@@ -29,7 +31,7 @@ class {{ name }}(models.Model):
 
 
 DJANGO_FIELD_TEMPLATE = Template("""
-    {{ field_name }} = models.{{ field_type.django_field }}(
+    {{ field_name }} = {{ field_type.django_field }}(
       {%- for value in field_type.django_positional -%}
         {{ value }}
         {%- if not loop.last %}, {% endif -%}

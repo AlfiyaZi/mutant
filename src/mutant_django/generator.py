@@ -57,8 +57,21 @@ class DjangoSchemaGenerator(BaseGenerator):
             for typename in SIMPLE_MAPPINGS
         })
 
+    def register_extension(self, extension):
+        extension(self)
+
     def render(self):
-        return DJANGO_FILE_TEMPLATE.render(entities=self._renderers())
+        entities = self._renderers()
+        return DJANGO_FILE_TEMPLATE.render(
+            entities=entities,
+            imports=self._render_imports(entities),
+        )
+
+    def _render_imports(self, entity_renderers):
+        lines = set()
+        for entity in entity_renderers:
+            lines.update(entity.render_imports())
+        return sorted(lines)
 
     def _renderers(self):
         entity_renderers = self.create_field_generators()
@@ -108,6 +121,12 @@ class DjangoEntity(object):
             model_meta=self.model_meta(),
             # options=self.entity_options
         )
+
+    def render_imports(self):
+        lines = []
+        for field in self.fields:
+            lines.extend(field.render_imports())
+        return lines
 
     def additional_renderers(self):
         return itertools.chain.from_iterable(
@@ -218,6 +237,9 @@ class DjangoBase(JinjaFieldGenerator):
         else:
             return ''
 
+    def render_imports(self):
+        return []
+
 
 class DjangoChoices(object):
     def __init__(self, name, options):
@@ -242,7 +264,7 @@ class DjangoChoices(object):
 
 
 class DjangoForeignKey(DjangoBase):
-    DJANGO_FIELD = "ForeignKey"
+    DJANGO_FIELD = "models.ForeignKey"
     DJANGO_ATTRIBUTES = DjangoBase.DJANGO_ATTRIBUTES + (
         ('on_delete', None),
         # ('model', None),
@@ -310,25 +332,29 @@ class DjangoString(DjangoBase):
     DJANGO_ATTRIBUTES = DjangoBase.DJANGO_ATTRIBUTES + (
         ('max_length', None),
     )
-    DJANGO_FIELD = "CharField"
+    DJANGO_FIELD = "models.CharField"
     MUTANT_DEFAULTS = DjangoBase.MUTANT_DEFAULTS + (
         ('max_length', 255),
     )
 
 
 class DjangoEmail(DjangoString):
-    DJANGO_FIELD = "EmailField"
+    DJANGO_FIELD = "models.EmailField"
     MUTANT_DEFAULTS = DjangoString.MUTANT_DEFAULTS + (
         ('max_length', None),
     )
 
 
 class DjangoDatetime(DjangoBase):
-    DJANGO_FIELD = "DateTimeField"
+    DJANGO_FIELD = "models.DateTimeField"
 
 
 def create_simple_mapping_field(typename):
-    return type('Django' + typename, (DjangoBase,), {'DJANGO_FIELD': typename + 'Field'})
+    return type(
+        'Django' + typename,
+        (DjangoBase,),
+        {'DJANGO_FIELD': 'models.' + typename + 'Field'}
+    )
 
 
 class DerivedEntity(object):

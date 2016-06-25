@@ -32,6 +32,7 @@ setup(
     packages=[
         'mutant',
         'mutant_django',
+        'mutant_django_json',
         'mutant_yaml',
         'mutant_short',
         'mutant_cerberus',

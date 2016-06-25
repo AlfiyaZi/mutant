@@ -8,27 +8,26 @@ from mutant.app import MutantApp
 logger = logging.getLogger(__name__)
 
 
-def yaml_to_django(definition='definition.yml'):
-    app = MutantApp()
-    load_extension(app, 'short')
-    load_extension(app, 'yaml')
-    load_extension(app, 'django')
-    app.parse('yaml', definition)
-    return app.mutate('django')
+def main(*args, **kwargs):
+    logging.basicConfig(level=logging.DEBUG)
+    options = parse_cli_options()
+    app = create_app(options.reader, options.writer, *options.extension)
+    app.parse(options.reader, options.definition)
+    sys.stdout.write(app.mutate(options.writer))
 
 
-def yaml_to_cerberus(definition='definition.yml'):
+def create_app(*extension_names):
     app = MutantApp()
     load_extension(app, 'short')
-    load_extension(app, 'yaml')
-    load_extension(app, 'cerberus')
-    app.parse('yaml', definition)
-    return app.mutate('cerberus')
+    for name in extension_names:
+        load_extension(app, name)
+    return app
 
 
 def load_extension(app, name):
     package_name = 'mutant_' + name
     package = importlib.import_module(package_name)
+    print(package.register)
     package.register(app)
 
 
@@ -47,20 +46,21 @@ def parse_cli_options():
         'definition',
         help='Definition file name or "-" for stdin',
     )
+    parser.add_argument(
+        '-e', '--extension', nargs='+',
+        help='Name of extension',
+    )
     return parser.parse_args()
 
 
-def create_app(*extension_names):
+def yaml_to_django(definition='definition.yml'):
     app = MutantApp()
-    load_extension(app, 'short')
-    for name in extension_names:
-        load_extension(app, name)
-    return app
+    app = create_app('yaml', 'django')
+    app.parse('yaml', definition)
+    return app.mutate('django')
 
 
-def main(*args, **kwargs):
-    logging.basicConfig(level=logging.DEBUG)
-    options = parse_cli_options()
-    app = create_app(options.reader, options.writer)
-    app.parse(options.reader, options.definition)
-    sys.stdout.write(app.mutate(options.writer))
+def yaml_to_cerberus(definition='definition.yml'):
+    app = create_app('yaml', 'cerberus')
+    app.parse('yaml', definition)
+    return app.mutate('cerberus')
