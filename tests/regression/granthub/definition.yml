@@ -12,24 +12,44 @@ Award:
     - full_number: {type: String, max-length: 96}
     - project_start: Datetime
     - project_end: Datetime
-    - fiscal_year: {type: String, regex: "^\\d{4}$", coerce: int}
+    - fiscal_year: {type: PositiveSmallInteger}
     - budget_start: Datetime
     - budget_end: Datetime
     - title: {type: String, max-length: 256}
     - awardees: {list-of: Awardee}
-    - persons: {list-of: Person}
     - funding_institution: FundingInstitution
     - attributes: Attributes
     - OPTIONS:
         - default-field-options:
             "null": true
             blank: true
+        - unique-together:
+            - pid
+            - authority
+        - abstract: true
+Participant:
+    - award: Award
+    - person: Person
+    - role: Role
+Role:
+    - pid: Pid
+    - authority: Authority
+    - title: {type: String, max-length: 100}
+    - OPTIONS:
+        - unique-together:
+            - pid
+            - authority
 Person:
     - pid: Pid
+    - authority: Authority
     - first_name: {type: String, max-length: 100}
     - given_names: {type: String, max-length: 256}
     - last_name: {type: String, max-length: 100}
     - accounts: {list-of: Account, own: true}
+    - OPTIONS:
+        - unique-together:
+            - pid
+            - authority
 Account:
     - pid: Pid
     - authority: Authority
@@ -43,7 +63,6 @@ Account:
 Awardee:
     - pid: Pid
     - name: {type: String, max-length: 256, required: true, empty: false}
-    - award_id: {type: Integer}
     - attributes: Attributes
 FundingInstitution:
     - code: Code

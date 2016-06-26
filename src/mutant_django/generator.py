@@ -153,6 +153,8 @@ class DjangoEntity(object):
                 lines.append('{0} = {1}'.format(name, values))
             elif name == 'verbose_name_plural':
                 lines.append('{0} = "{1}"'.format(name, values))
+            elif name == 'abstract':
+                lines.append('{0} = {1}'.format(name, values))
         return lines
 
     def __repr__(self):
